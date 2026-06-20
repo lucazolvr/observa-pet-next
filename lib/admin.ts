@@ -42,6 +42,20 @@ export async function fetchAdminStats() {
   return { pets: pets ?? 0, posts: posts ?? 0, users: users ?? 0, ongsPending: ongsPending ?? 0, reports: reports ?? 0 }
 }
 
+export async function fetchAdminUsers(): Promise<{
+  id: string; name: string; role: string; city: string; created_at: string; verified: boolean
+}[]> {
+  const supabase = await supaServer()
+  const { data } = await supabase
+    .from('profiles')
+    .select('id, name, role, city, created_at, verified')
+    .order('created_at', { ascending: false })
+    .limit(100)
+  return (data ?? []) as {
+    id: string; name: string; role: string; city: string; created_at: string; verified: boolean
+  }[]
+}
+
 export async function fetchAdminArticles(): Promise<Article[]> {
   const supabase = await supaServer()
   const { data } = await supabase

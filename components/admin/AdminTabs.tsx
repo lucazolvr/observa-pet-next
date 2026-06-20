@@ -4,14 +4,18 @@ import { useState } from 'react'
 import OngQueue from '@/components/admin/OngQueue'
 import ReportsQueue from '@/components/admin/ReportsQueue'
 import ArticleEditorPanel from '@/components/admin/ArticleEditor'
+import UsersPanel from '@/components/admin/UsersPanel'
 import type { Ong, Report, Article } from '@/types'
 
-type Tab = 'ongs' | 'reports' | 'artigos'
+type Tab = 'ongs' | 'reports' | 'artigos' | 'usuarios'
+
+type AdminUser = { id: string; name: string; role: string; city: string; created_at: string; verified: boolean }
 
 type Props = {
   ongs: Ong[]
   reports: Report[]
   articles: Article[]
+  users: AdminUser[]
   ongsPending: number
   reportsPending: number
 }
@@ -36,21 +40,23 @@ function TabBtn({ active, badge, onClick, children }: {
   )
 }
 
-export default function AdminTabs({ ongs, reports, articles, ongsPending, reportsPending }: Props) {
+export default function AdminTabs({ ongs, reports, articles, users, ongsPending, reportsPending }: Props) {
   const [tab, setTab] = useState<Tab>('ongs')
 
   return (
     <div>
       {/* Abas */}
       <div className="flex border-b border-border mb-4 overflow-x-auto">
-        <TabBtn active={tab === 'ongs'} badge={ongsPending} onClick={() => setTab('ongs')}>ONGs</TabBtn>
-        <TabBtn active={tab === 'reports'} badge={reportsPending} onClick={() => setTab('reports')}>Denúncias</TabBtn>
-        <TabBtn active={tab === 'artigos'} onClick={() => setTab('artigos')}>Artigos</TabBtn>
+        <TabBtn active={tab === 'ongs'}     badge={ongsPending}    onClick={() => setTab('ongs')}>ONGs</TabBtn>
+        <TabBtn active={tab === 'reports'}  badge={reportsPending} onClick={() => setTab('reports')}>Denúncias</TabBtn>
+        <TabBtn active={tab === 'artigos'}  onClick={() => setTab('artigos')}>Artigos</TabBtn>
+        <TabBtn active={tab === 'usuarios'} onClick={() => setTab('usuarios')}>Usuários</TabBtn>
       </div>
 
-      {tab === 'ongs'    && <OngQueue ongs={ongs} />}
-      {tab === 'reports' && <ReportsQueue reports={reports} />}
-      {tab === 'artigos' && <ArticleEditorPanel articles={articles} />}
+      {tab === 'ongs'      && <OngQueue ongs={ongs} />}
+      {tab === 'reports'   && <ReportsQueue reports={reports} />}
+      {tab === 'artigos'   && <ArticleEditorPanel articles={articles} />}
+      {tab === 'usuarios'  && <UsersPanel users={users} />}
     </div>
   )
 }

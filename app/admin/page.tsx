@@ -1,15 +1,16 @@
-import { fetchPendingOngs, fetchPendingReports, fetchAdminStats, fetchAdminArticles } from '@/lib/admin'
+import { fetchPendingOngs, fetchPendingReports, fetchAdminStats, fetchAdminArticles, fetchAdminUsers } from '@/lib/admin'
 import StatsCards from '@/components/admin/StatsCards'
 import AdminTabs from '@/components/admin/AdminTabs'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminPage() {
-  const [stats, ongs, reports, articles] = await Promise.all([
+  const [stats, ongs, reports, articles, users] = await Promise.all([
     fetchAdminStats(),
     fetchPendingOngs(),
     fetchPendingReports(),
     fetchAdminArticles(),
+    fetchAdminUsers(),
   ])
 
   return (
@@ -23,6 +24,7 @@ export default async function AdminPage() {
         ongs={ongs}
         reports={reports}
         articles={articles}
+        users={users}
         ongsPending={stats.ongsPending}
         reportsPending={stats.reports}
       />

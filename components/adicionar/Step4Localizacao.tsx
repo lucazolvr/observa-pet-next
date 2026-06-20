@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { MapPin, Loader2, Navigation } from 'lucide-react'
 import { BAIRROS_SAO_LUIS } from '@/lib/bairros'
 import type { FormState, FormAction } from '@/app/(app)/adicionar/page'
 
@@ -11,9 +13,33 @@ const inputClass = "w-full rounded-[14px] border border-border bg-bg px-3 py-2.5
 const textareaClass = `${inputClass} resize-none`
 
 export default function Step4Localizacao({ state, dispatch }: Props) {
-  function set(field: keyof FormState, value: string) {
-    dispatch({ type: 'SET_FIELD', field, value })
+  const [geoLoading, setGeoLoading] = useState(false)
+  const [geoError, setGeoError]     = useState('')
+
+  function set(field: keyof FormState, value: unknown) {
+    dispatch({ type: 'SET_FIELD', field: field as keyof FormState, value })
   }
+
+  function getGPS() {
+    if (!navigator.geolocation) { setGeoError('Seu navegador não suporta geolocalização'); return }
+    setGeoLoading(true)
+    setGeoError('')
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        set('lat', pos.coords.latitude)
+        set('lng', pos.coords.longitude)
+        set('location_text', state.location_text || `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`)
+        setGeoLoading(false)
+      },
+      () => {
+        setGeoError('Não foi possível obter a localização. Verifique as permissões.')
+        setGeoLoading(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+
+  const hasGPS = !!(state.lat && state.lng)
 
   return (
     <div className="flex flex-col gap-5">
@@ -21,6 +47,27 @@ export default function Step4Localizacao({ state, dispatch }: Props) {
         <h2 className="text-[18px] font-extrabold text-ink mb-1">Localização</h2>
         <p className="text-sm text-muted mb-4">Onde o animal foi encontrado?</p>
       </div>
+
+      {/* GPS */}
+      <button
+        type="button"
+        onClick={getGPS}
+        disabled={geoLoading}
+        className={`flex items-center gap-3 w-full rounded-[14px] border-2 px-4 py-3 transition-all ${
+          hasGPS
+            ? 'border-green bg-green/5 text-green'
+            : 'border-dashed border-border text-muted'
+        }`}
+      >
+        {geoLoading
+          ? <Loader2 size={18} className="animate-spin shrink-0" />
+          : <Navigation size={18} className="shrink-0" />
+        }
+        <span className="text-sm font-semibold">
+          {geoLoading ? 'Obtendo localização…' : hasGPS ? 'GPS capturado ✓' : 'Usar minha localização (GPS)'}
+        </span>
+      </button>
+      {geoError && <p className="text-xs text-coral -mt-3">{geoError}</p>}
 
       {/* Bairro */}
       <div>

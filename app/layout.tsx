@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { ToastProvider } from '@/components/Toast'
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar'
 
 const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={`${jakarta.variable} h-full`}>
       <body className="min-h-full antialiased">
         <ToastProvider>
+          <ServiceWorkerRegistrar />
           {children}
         </ToastProvider>
       </body>

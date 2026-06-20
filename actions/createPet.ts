@@ -24,6 +24,8 @@ export async function createPet(formData: FormData): Promise<never> {
       personality: (formData.get('personality') as string) || null,
       traits,
       neighborhood: (formData.get('neighborhood') as string) || null,
+      lat: formData.get('lat') ? parseFloat(formData.get('lat') as string) : null,
+      lng: formData.get('lng') ? parseFloat(formData.get('lng') as string) : null,
     })
     .select('id')
     .single()

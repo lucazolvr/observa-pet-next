@@ -1,7 +1,8 @@
 'use client'
 
 import { useReducer, useTransition } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ChevronLeft, X } from 'lucide-react'
 import { createPet } from '@/actions/createPet'
 import ProgressBar from '@/components/adicionar/ProgressBar'
 import Step1Aviso from '@/components/adicionar/Step1Aviso'
@@ -38,6 +39,8 @@ export type FormState = {
   location_text: string
   caption: string
   personality: string
+  lat: number | null
+  lng: number | null
 }
 
 export type FormAction =
@@ -54,7 +57,7 @@ const initial: FormState = {
   tipo: '', photos: [],
   species: '', name: '', breed: '', age_text: '', gender: '', porte: '', status: '',
   condicao_corporal: null, feridas: false, feridas_desc: '', comportamento: [], overview: '',
-  neighborhood: '', location_text: '', caption: '', personality: '',
+  neighborhood: '', location_text: '', caption: '', personality: '', lat: null, lng: null,
 }
 
 function validate(state: FormState): Record<string, string> {
@@ -104,6 +107,7 @@ function buildTraits(state: FormState): string[] {
 const STEP_TITLES = ['Aviso', 'Animal', 'Ficha clínica', 'Localização']
 
 export default function AdicionarPage() {
+  const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initial)
   const [isPending, startTransition] = useTransition()
 
@@ -124,6 +128,8 @@ export default function AdicionarPage() {
     fd.set('personality',  state.personality)
     fd.set('neighborhood', state.neighborhood)
     fd.set('location_text', state.location_text)
+    if (state.lat != null)  fd.set('lat', String(state.lat))
+    if (state.lng != null)  fd.set('lng', String(state.lng))
     fd.set('caption',      state.caption)
     fd.set('traits',       JSON.stringify(buildTraits(state)))
     state.photos.forEach(f => fd.append('photos', f))
@@ -137,15 +143,16 @@ export default function AdicionarPage() {
     <div className="flex flex-col min-h-dvh bg-card">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-5 pb-2">
-        {state.step > 1 && (
-          <button
-            onClick={() => dispatch({ type: 'PREV' })}
-            className="w-9 h-9 rounded-full bg-bg flex items-center justify-center shrink-0"
-            aria-label="Voltar"
-          >
-            <ChevronLeft size={20} className="text-ink" />
-          </button>
-        )}
+        <button
+          onClick={() => state.step > 1 ? dispatch({ type: 'PREV' }) : router.back()}
+          className="w-9 h-9 rounded-full bg-bg flex items-center justify-center shrink-0"
+          aria-label="Voltar"
+        >
+          {state.step > 1
+            ? <ChevronLeft size={20} className="text-ink" />
+            : <X size={20} className="text-ink" />
+          }
+        </button>
         <div>
           <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
             Etapa {state.step} de 4

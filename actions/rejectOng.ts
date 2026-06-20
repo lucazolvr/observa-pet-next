@@ -2,6 +2,7 @@
 
 import { supaServer } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendOngRejectedEmail } from '@/lib/email'
 
 export async function rejectOng(ongId: string, reason: string) {
   const supabase = await supaServer()
@@ -22,6 +23,11 @@ export async function rejectOng(ongId: string, reason: string) {
       type: 'system',
       text: `Sua ONG "${ong.name}" não foi aprovada. Motivo: ${reason}`,
     })
+
+    const { data: { user } } = await supabase.auth.admin.getUserById(ong.owner_id)
+    if (user?.email) {
+      await sendOngRejectedEmail(user.email, ong.name, reason)
+    }
   }
 
   revalidatePath('/admin')
