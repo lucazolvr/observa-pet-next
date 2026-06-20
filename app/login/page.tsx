@@ -4,55 +4,149 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supaBrowser } from '@/lib/supabase/client'
 import PawMark from '@/components/PawMark'
-import { Eye, EyeOff, Loader2, Mail, Lock, User } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Mail, Lock, User, Building2 } from 'lucide-react'
 
+// ─── Papel ────────────────────────────────────────────────────────────────────
+const ROLES = [
+  {
+    value: 'tutor',
+    icon: '🏠',
+    label: 'Tutor',
+    desc: 'Tenho um animal ou cuido de um',
+  },
+  {
+    value: 'protetor',
+    icon: '🛡️',
+    label: 'Protetor',
+    desc: 'Resgate e abrigo de animais de rua',
+  },
+  {
+    value: 'voluntario',
+    icon: '🤝',
+    label: 'Voluntário',
+    desc: 'Apoio causas de proteção animal',
+  },
+] as const
+
+type Role = (typeof ROLES)[number]['value']
+
+// ─── Input ─────────────────────────────────────────────────────────────────────
+function Input({
+  icon: Icon,
+  type,
+  value,
+  onChange,
+  placeholder,
+  required,
+  minLength,
+  autoComplete,
+  rightSlot,
+}: {
+  icon: React.ElementType
+  type: string
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  required?: boolean
+  minLength?: number
+  autoComplete?: string
+  rightSlot?: React.ReactNode
+}) {
+  return (
+    <div className="relative">
+      <Icon size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        minLength={minLength}
+        autoComplete={autoComplete}
+        className="
+          w-full pl-10 pr-12 py-3.5 rounded-btn
+          bg-card border border-border
+          text-ink text-sm font-medium
+          placeholder:text-muted
+          focus:outline-none focus:border-blue focus:ring-2 focus:ring-blue/15
+          transition
+        "
+      />
+      {rightSlot && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2">{rightSlot}</div>
+      )}
+    </div>
+  )
+}
+
+// ─── Página ────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const router = useRouter()
+  const supabase = supaBrowser()
+
   const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw, setShowPw] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+
+  // campos
+  const [name, setName]               = useState('')
+  const [role, setRole]               = useState<Role>('tutor')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
+  const [confirmPw, setConfirmPw]     = useState('')
+  const [showPw, setShowPw]           = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  // estado
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState<string | null>(null)
   const [emailSent, setEmailSent] = useState(false)
   const [showResend, setShowResend] = useState(false)
 
-  const supabase = supaBrowser()
+  function switchMode(m: 'login' | 'signup') {
+    setMode(m)
+    setError(null)
+    setShowResend(false)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    setLoading(true)
 
     if (mode === 'signup') {
+      if (!name.trim()) { setError('Informe seu nome.'); return }
+      if (password !== confirmPw) { setError('As senhas não coincidem.'); return }
+      if (password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres.'); return }
+
+      setLoading(true)
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name } },
+        options: { data: { name: name.trim(), role } },
       })
-      if (error) {
-        setError(error.message)
-      } else {
-        setEmailSent(true)
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        if (error.message.toLowerCase().includes('email not confirmed')) {
-          setShowResend(true)
-        } else {
-          setError('Email ou senha incorretos.')
-        }
-      } else {
-        router.push('/')
-        router.refresh()
-      }
+      setLoading(false)
+
+      if (error) { setError(error.message); return }
+      setEmailSent(true)
+      return
     }
 
+    // login
+    setLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
+
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed')) {
+        setShowResend(true)
+      } else {
+        setError('Email ou senha incorretos.')
+      }
+      return
+    }
+    router.push('/')
+    router.refresh()
   }
 
   async function handleResend() {
@@ -63,6 +157,7 @@ export default function LoginPage() {
     setEmailSent(true)
   }
 
+  // ── Email enviado ─────────────────────────────────────────────────────────
   if (emailSent) {
     return (
       <main className="min-h-dvh flex flex-col items-center justify-center px-6 bg-bg">
@@ -72,7 +167,8 @@ export default function LoginPage() {
           </span>
           <h1 className="text-2xl font-extrabold text-ink tracking-tight">Confirme seu email</h1>
           <p className="text-body text-sm leading-relaxed">
-            Enviamos um link de confirmação para <strong>{email}</strong>. Verifique sua caixa de entrada.
+            Enviamos um link de confirmação para <strong>{email}</strong>.
+            Verifique sua caixa de entrada e clique no link para ativar sua conta.
           </p>
           <button
             onClick={() => { setEmailSent(false); setMode('login') }}
@@ -85,9 +181,11 @@ export default function LoginPage() {
     )
   }
 
+  // ── Formulário ────────────────────────────────────────────────────────────
   return (
-    <main className="min-h-dvh flex flex-col items-center justify-center px-6 bg-bg">
-      <div className="w-full max-w-sm space-y-8">
+    <main className="min-h-dvh flex flex-col items-center justify-center px-6 bg-bg py-10">
+      <div className="w-full max-w-sm space-y-6">
+
         {/* Logo */}
         <div className="flex flex-col items-center gap-2">
           <div
@@ -102,16 +200,15 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Mode toggle */}
+        {/* Toggle login / cadastro */}
         <div className="flex bg-border/40 rounded-btn p-1">
-          {(['login', 'signup'] as const).map((m) => (
+          {(['login', 'signup'] as const).map(m => (
             <button
               key={m}
-              onClick={() => { setMode(m); setError(null) }}
+              type="button"
+              onClick={() => switchMode(m)}
               className={`flex-1 py-2 text-sm font-semibold rounded-[10px] transition-all ${
-                mode === m
-                  ? 'bg-card text-blue shadow-soft'
-                  : 'text-muted'
+                mode === m ? 'bg-card text-blue shadow-soft' : 'text-muted'
               }`}
             >
               {m === 'login' ? 'Entrar' : 'Cadastrar'}
@@ -119,105 +216,131 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Email not confirmed banner */}
+        {/* Banner email não confirmado */}
         {showResend && (
           <div className="bg-[#fff1ee] border border-coral/20 rounded-btn p-4 flex items-center justify-between gap-3">
             <p className="text-coral text-sm font-medium">Email não confirmado.</p>
             <button
               onClick={handleResend}
               disabled={loading}
-              className="text-coral text-sm font-bold shrink-0"
+              className="text-coral text-sm font-bold shrink-0 disabled:opacity-50"
             >
-              Reenviar
+              Reenviar link
             </button>
           </div>
         )}
 
-        {/* Form */}
+        {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
+          {/* ── Campos exclusivos do cadastro ── */}
           {mode === 'signup' && (
-            <label className="block">
-              <span className="text-xs font-semibold text-body mb-1.5 block">Nome</span>
-              <div className="relative">
-                <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-                <input
+            <>
+              {/* Nome */}
+              <div>
+                <label className="text-xs font-semibold text-body mb-1.5 block">Nome completo</label>
+                <Input
+                  icon={User}
                   type="text"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={setName}
                   placeholder="Seu nome"
                   required
-                  className="
-                    w-full pl-10 pr-4 py-3.5 rounded-btn
-                    bg-card border border-border
-                    text-ink text-sm font-medium
-                    placeholder:text-muted
-                    focus:outline-none focus:border-blue focus:ring-2 focus:ring-blue/15
-                    transition
-                  "
+                  autoComplete="name"
                 />
               </div>
-            </label>
+
+              {/* Papel */}
+              <div>
+                <label className="text-xs font-semibold text-body mb-2 block">Você é…</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {ROLES.map(r => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => setRole(r.value)}
+                      className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-card border-2 text-center transition-all ${
+                        role === r.value
+                          ? 'border-blue bg-blue-soft'
+                          : 'border-border bg-card'
+                      }`}
+                    >
+                      <span className="text-xl leading-none">{r.icon}</span>
+                      <span className={`text-[11px] font-bold leading-tight ${
+                        role === r.value ? 'text-blue' : 'text-ink'
+                      }`}>{r.label}</span>
+                      <span className="text-[9px] text-muted leading-tight">{r.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
           )}
 
-          <label className="block">
-            <span className="text-xs font-semibold text-body mb-1.5 block">Email</span>
-            <div className="relative">
-              <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                required
-                className="
-                  w-full pl-10 pr-4 py-3.5 rounded-btn
-                  bg-card border border-border
-                  text-ink text-sm font-medium
-                  placeholder:text-muted
-                  focus:outline-none focus:border-blue focus:ring-2 focus:ring-blue/15
-                  transition
-                "
-              />
-            </div>
-          </label>
+          {/* Email */}
+          <div>
+            <label className="text-xs font-semibold text-body mb-1.5 block">Email</label>
+            <Input
+              icon={Mail}
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="seu@email.com"
+              required
+              autoComplete="email"
+            />
+          </div>
 
-          <label className="block">
-            <span className="text-xs font-semibold text-body mb-1.5 block">Senha</span>
-            <div className="relative">
-              <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
-              <input
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
+          {/* Senha */}
+          <div>
+            <label className="text-xs font-semibold text-body mb-1.5 block">Senha</label>
+            <Input
+              icon={Lock}
+              type={showPw ? 'text' : 'password'}
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              rightSlot={
+                <button type="button" onClick={() => setShowPw(p => !p)} className="text-muted p-1">
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              }
+            />
+          </div>
+
+          {/* Confirmação de senha (só no cadastro) */}
+          {mode === 'signup' && (
+            <div>
+              <label className="text-xs font-semibold text-body mb-1.5 block">Confirmar senha</label>
+              <Input
+                icon={Lock}
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPw}
+                onChange={setConfirmPw}
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="
-                  w-full pl-10 pr-12 py-3.5 rounded-btn
-                  bg-card border border-border
-                  text-ink text-sm font-medium
-                  placeholder:text-muted
-                  focus:outline-none focus:border-blue focus:ring-2 focus:ring-blue/15
-                  transition
-                "
+                autoComplete="new-password"
+                rightSlot={
+                  <button type="button" onClick={() => setShowConfirm(p => !p)} className="text-muted p-1">
+                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                }
               />
-              <button
-                type="button"
-                onClick={() => setShowPw(p => !p)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-              >
-                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+              {confirmPw && password !== confirmPw && (
+                <p className="text-[11px] text-coral mt-1">As senhas não coincidem</p>
+              )}
             </div>
-          </label>
-
-          {error && (
-            <p className="text-coral text-sm font-medium">{error}</p>
           )}
+
+          {error && <p className="text-coral text-sm font-medium">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (mode === 'signup' && !!confirmPw && password !== confirmPw)}
             className="
               w-full py-4 rounded-btn
               bg-blue text-white text-sm font-bold
@@ -231,6 +354,34 @@ export default function LoginPage() {
             {mode === 'login' ? 'Entrar' : 'Criar conta'}
           </button>
         </form>
+
+        {/* Link para cadastro de ONG */}
+        {mode === 'signup' && (
+          <div className="border border-border rounded-card px-4 py-3.5 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-blue-soft flex items-center justify-center shrink-0">
+              <Building2 size={16} className="text-blue" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-ink">Representa uma ONG?</p>
+              <p className="text-[11px] text-muted">Cadastro separado com análise da equipe</p>
+            </div>
+            <Link
+              href="/cadastro-ong"
+              className="text-xs font-bold text-blue shrink-0"
+            >
+              Cadastrar →
+            </Link>
+          </div>
+        )}
+
+        {/* Termos (só no cadastro) */}
+        {mode === 'signup' && (
+          <p className="text-[11px] text-muted text-center leading-relaxed">
+            Ao criar sua conta você concorda com os{' '}
+            <span className="text-blue font-semibold">Termos de Uso</span> e a{' '}
+            <span className="text-blue font-semibold">Política de Privacidade</span> do ObservaPet.
+          </p>
+        )}
       </div>
     </main>
   )
