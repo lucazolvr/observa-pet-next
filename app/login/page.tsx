@@ -65,18 +65,15 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<'login' | 'signup'>('login')
 
-  // campos
-  const [name, setName]               = useState('')
-  const [email, setEmail]             = useState('')
-  const [password, setPassword]       = useState('')
-  const [confirmPw, setConfirmPw]     = useState('')
-  const [showPw, setShowPw]           = useState(false)
+  const [name, setName]           = useState('')
+  const [email, setEmail]         = useState('')
+  const [password, setPassword]   = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [showPw, setShowPw]       = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // estado
-  const [loading, setLoading]     = useState(false)
-  const [error, setError]         = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState<string | null>(null)
   const [showResend, setShowResend] = useState(false)
 
   function switchMode(m: 'login' | 'signup') {
@@ -103,7 +100,7 @@ export default function LoginPage() {
       setLoading(false)
 
       if (error) { setError(error.message); return }
-      setEmailSent(true)
+      router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
       return
     }
 
@@ -124,39 +121,6 @@ export default function LoginPage() {
     router.refresh()
   }
 
-  async function handleResend() {
-    setLoading(true)
-    await supabase.auth.resend({ type: 'signup', email })
-    setLoading(false)
-    setShowResend(false)
-    setEmailSent(true)
-  }
-
-  // ── Email enviado ─────────────────────────────────────────────────────────
-  if (emailSent) {
-    return (
-      <main className="min-h-dvh flex flex-col items-center justify-center px-6 bg-bg">
-        <div className="w-full max-w-sm text-center space-y-4">
-          <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-soft">
-            <Mail size={28} className="text-blue" />
-          </span>
-          <h1 className="text-2xl font-extrabold text-ink tracking-tight">Confirme seu email</h1>
-          <p className="text-body text-sm leading-relaxed">
-            Enviamos um link de confirmação para <strong>{email}</strong>.
-            Verifique sua caixa de entrada e clique no link para ativar sua conta.
-          </p>
-          <button
-            onClick={() => { setEmailSent(false); setMode('login') }}
-            className="text-blue text-sm font-semibold"
-          >
-            Voltar para o login
-          </button>
-        </div>
-      </main>
-    )
-  }
-
-  // ── Formulário ────────────────────────────────────────────────────────────
   return (
     <main className="min-h-dvh flex flex-col items-center justify-center px-6 bg-bg py-10">
       <div className="w-full max-w-sm space-y-6">
@@ -175,7 +139,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Toggle login / cadastro */}
+        {/* Toggle */}
         <div className="flex bg-border/40 rounded-btn p-1">
           {(['login', 'signup'] as const).map(m => (
             <button
@@ -195,40 +159,33 @@ export default function LoginPage() {
         {showResend && (
           <div className="bg-[#fff1ee] border border-coral/20 rounded-btn p-4 flex items-center justify-between gap-3">
             <p className="text-coral text-sm font-medium">Email não confirmado.</p>
-            <button
-              onClick={handleResend}
-              disabled={loading}
-              className="text-coral text-sm font-bold shrink-0 disabled:opacity-50"
+            <Link
+              href={`/verificar-email?email=${encodeURIComponent(email)}`}
+              className="text-coral text-sm font-bold shrink-0"
             >
-              Reenviar link
-            </button>
+              Verificar →
+            </Link>
           </div>
         )}
 
         {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-4">
 
-          {/* ── Campos exclusivos do cadastro ── */}
           {mode === 'signup' && (
-            <>
-              {/* Nome */}
-              <div>
-                <label className="text-xs font-semibold text-body mb-1.5 block">Nome completo</label>
-                <Input
-                  icon={User}
-                  type="text"
-                  value={name}
-                  onChange={setName}
-                  placeholder="Seu nome"
-                  required
-                  autoComplete="name"
-                />
-              </div>
-
-            </>
+            <div>
+              <label className="text-xs font-semibold text-body mb-1.5 block">Nome completo</label>
+              <Input
+                icon={User}
+                type="text"
+                value={name}
+                onChange={setName}
+                placeholder="Seu nome"
+                required
+                autoComplete="name"
+              />
+            </div>
           )}
 
-          {/* Email */}
           <div>
             <label className="text-xs font-semibold text-body mb-1.5 block">Email</label>
             <Input
@@ -242,9 +199,15 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Senha */}
           <div>
-            <label className="text-xs font-semibold text-body mb-1.5 block">Senha</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-body">Senha</label>
+              {mode === 'login' && (
+                <Link href="/esqueci-senha" className="text-xs text-blue font-semibold">
+                  Esqueci minha senha
+                </Link>
+              )}
+            </div>
             <Input
               icon={Lock}
               type={showPw ? 'text' : 'password'}
@@ -262,7 +225,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Confirmação de senha (só no cadastro) */}
           {mode === 'signup' && (
             <div>
               <label className="text-xs font-semibold text-body mb-1.5 block">Confirmar senha</label>
@@ -306,7 +268,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Link para cadastro de ONG */}
+        {/* Link ONG */}
         {mode === 'signup' && (
           <div className="border border-border rounded-card px-4 py-3.5 flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-blue-soft flex items-center justify-center shrink-0">
@@ -316,16 +278,12 @@ export default function LoginPage() {
               <p className="text-xs font-bold text-ink">Representa uma ONG?</p>
               <p className="text-[11px] text-muted">Cadastro separado com análise da equipe</p>
             </div>
-            <Link
-              href="/cadastro-ong"
-              className="text-xs font-bold text-blue shrink-0"
-            >
+            <Link href="/cadastro-ong" className="text-xs font-bold text-blue shrink-0">
               Cadastrar →
             </Link>
           </div>
         )}
 
-        {/* Termos (só no cadastro) */}
         {mode === 'signup' && (
           <p className="text-[11px] text-muted text-center leading-relaxed">
             Ao criar sua conta você concorda com os{' '}
