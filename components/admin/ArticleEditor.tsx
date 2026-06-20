@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff, FileText, Globe } from 'lucide-react'
+import { useState, useTransition, useRef } from 'react'
+import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff, FileText, Globe, ImagePlus, Loader2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { saveArticle, deleteArticle } from '@/actions/saveArticle'
+import { uploadArticleCover } from '@/actions/admin/uploadArticleCover'
+import { compressImage } from '@/lib/imageUtils'
 import type { Article, ArticleCategory } from '@/types'
 
 const CATEGORIES: { value: ArticleCategory; label: string }[] = [
@@ -38,7 +40,26 @@ function ArticleForm({ article, onDone }: { article?: Article; onDone: () => voi
   const [preview, setPreview] = useState(false)
   const [body, setBody]      = useState(article?.body ?? '')
   const [coverUrl, setCoverUrl] = useState(article?.cover_url ?? '')
+  const [coverUploading, setCoverUploading] = useState(false)
+  const [coverError, setCoverError] = useState<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
   const isDraft = !article?.published_at
+
+  async function handleCoverFile(file: File) {
+    setCoverError(null)
+    setCoverUploading(true)
+    try {
+      const compressed = await compressImage(file)
+      const fd = new FormData()
+      fd.set('file', compressed)
+      const url = await uploadArticleCover(fd)
+      setCoverUrl(url)
+    } catch (err) {
+      setCoverError(err instanceof Error ? err.message : 'Erro no upload')
+    } finally {
+      setCoverUploading(false)
+    }
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>, publish?: boolean) {
     e.preventDefault()
@@ -122,19 +143,47 @@ function ArticleForm({ article, onDone }: { article?: Article; onDone: () => voi
       </div>
 
       {/* Capa */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[11px] font-semibold text-muted uppercase">URL da capa</label>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[11px] font-semibold text-muted uppercase">Capa do artigo</label>
+
+        {/* Input oculto que passa a URL pro FormData */}
+        <input type="hidden" name="cover_url" value={coverUrl} />
         <input
-          name="cover_url"
-          value={coverUrl}
-          onChange={e => setCoverUrl(e.target.value)}
-          className="input text-sm"
-          placeholder="https://…"
+          ref={coverInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleCoverFile(f) }}
         />
-        {coverUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={coverUrl} alt="capa" className="w-full h-32 object-cover rounded-[12px] mt-1" />
+
+        {coverUrl ? (
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverUrl} alt="capa" className="w-full h-40 object-cover rounded-[14px]" />
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={coverUploading}
+              className="absolute bottom-2 right-2 flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-ink/70 text-white text-xs font-semibold backdrop-blur-sm disabled:opacity-50"
+            >
+              {coverUploading ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+              Trocar
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => coverInputRef.current?.click()}
+            disabled={coverUploading}
+            className="flex flex-col items-center justify-center gap-2 h-32 rounded-[14px] border-2 border-dashed border-border text-muted hover:border-blue hover:text-blue transition-colors disabled:opacity-50"
+          >
+            {coverUploading
+              ? <><Loader2 size={22} className="animate-spin" /><span className="text-xs font-semibold">Comprimindo e enviando…</span></>
+              : <><ImagePlus size={22} /><span className="text-xs font-semibold">Clique para adicionar capa</span><span className="text-[10px]">JPG, PNG ou WebP · até 5 MB</span></>
+            }
+          </button>
         )}
+        {coverError && <p className="text-xs text-coral">{coverError}</p>}
       </div>
 
       {/* Body com preview */}
