@@ -1,12 +1,23 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Mesmas credenciais do Gmail SMTP configurado no Supabase
+function createTransport() {
+  return nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  })
+}
 
-const FROM = 'ObservaPet <noreply@observapet.com.br>'
+const FROM = `ObservaPet <${process.env.GMAIL_USER}>`
 
 export async function sendOngApprovedEmail(to: string, ongName: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return
+  await createTransport().sendMail({
     from: FROM,
     to,
     subject: `🎉 Sua ONG "${ongName}" foi aprovada!`,
@@ -14,8 +25,9 @@ export async function sendOngApprovedEmail(to: string, ongName: string) {
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
         <h1 style="color:#2a6af0">Parabéns! Sua ONG foi aprovada 🐾</h1>
         <p>A ONG <strong>${ongName}</strong> agora está visível para todos os usuários do ObservaPet.</p>
-        <p>Você pode editar o perfil, adicionar uma foto de capa, missão e link de doação diretamente no app.</p>
-        <a href="https://observapet.com.br/ongs" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#2a6af0;color:white;border-radius:12px;text-decoration:none;font-weight:bold">
+        <p>Você pode editar o perfil, adicionar foto de capa, missão e link de doação diretamente no app.</p>
+        <a href="https://observapet.com.br/ongs"
+           style="display:inline-block;margin-top:16px;padding:12px 24px;background:#2a6af0;color:white;border-radius:12px;text-decoration:none;font-weight:bold">
           Ver minha ONG
         </a>
         <p style="margin-top:32px;color:#888;font-size:12px">ObservaPet · São Luís, MA</p>
@@ -25,8 +37,8 @@ export async function sendOngApprovedEmail(to: string, ongName: string) {
 }
 
 export async function sendOngRejectedEmail(to: string, ongName: string, reason: string) {
-  if (!process.env.RESEND_API_KEY) return
-  await resend.emails.send({
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return
+  await createTransport().sendMail({
     from: FROM,
     to,
     subject: `Sobre o cadastro da ONG "${ongName}" no ObservaPet`,
@@ -38,7 +50,8 @@ export async function sendOngRejectedEmail(to: string, ongName: string, reason: 
           <strong>Motivo:</strong> ${reason}
         </div>
         <p>Você pode corrigir as informações e submeter novamente através do app.</p>
-        <a href="https://observapet.com.br/cadastro-ong" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#2a6af0;color:white;border-radius:12px;text-decoration:none;font-weight:bold">
+        <a href="https://observapet.com.br/cadastro-ong"
+           style="display:inline-block;margin-top:16px;padding:12px 24px;background:#2a6af0;color:white;border-radius:12px;text-decoration:none;font-weight:bold">
           Tentar novamente
         </a>
         <p style="margin-top:32px;color:#888;font-size:12px">ObservaPet · São Luís, MA</p>
