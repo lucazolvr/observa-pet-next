@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand colors */
+  --color-blue:       #2a6af0;
+  --color-blue-2:     #5b8cff;
+  --color-blue-soft:  #e8f0ff;
+  --color-ink:        #16233f;
+  --color-body:       #36425a;
+  --color-muted:      #8b97a8;
+  --color-coral:      #ff6a55;
+  --color-green:      #1faa67;
+  --color-amber:      #d98a00;
+  --color-purple:     #7c5cff;
+  --color-bg:         #f5f7fb;
+  --color-card:       #ffffff;
+  --color-border:     #e2e8f2;
+
+  /* Border radius */
+  --radius-card:   22px;
+  --radius-sheet:  28px;
+  --radius-btn:    14px;
+  --radius-chip:   11px;
+  --radius-avatar: 13px;
+
+  /* Shadows */
+  --shadow-card: 0 8px 22px rgba(20,40,80,.06);
+  --shadow-soft: 0 4px 12px rgba(20,40,80,.05);
+  --shadow-btn:  0 8px 16px -6px rgba(42,106,240,.6);
+
+  /* Font */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* Animations */
+  --animate-op-live:   op-live 1.2s ease-in-out infinite;
+  --animate-op-ring:   op-ring 1.4s ease-out infinite;
+  --animate-op-pop:    op-pop 0.4s cubic-bezier(.2,.8,.2,1) forwards;
+  --animate-slide-up:  slide-up 0.32s cubic-bezier(.2,.8,.2,1) forwards;
+  --animate-toast-in:  toast-in 0.3s cubic-bezier(.2,.8,.2,1) forwards;
+  --animate-toast-out: toast-out 0.2s ease-in forwards;
+  --animate-fade-in:   fade-in 0.2s ease forwards;
+}
+
+@keyframes op-live {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .35; }
+}
+
+@keyframes op-ring {
+  0%   { transform: scale(.5); opacity: 1; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes op-pop {
+  0%   { transform: scale(.8); opacity: 0; }
+  60%  { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes toast-in {
+  from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+}
