@@ -1,6 +1,7 @@
 'use server'
 
 import { supaServer } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/security'
 import { revalidatePath } from 'next/cache'
 
 export async function resolveReport(
@@ -10,22 +11,16 @@ export async function resolveReport(
   adminNote?: string
 ) {
   const supabase = await supaServer()
+  await requireAdmin(supabase)
 
-  if (deletePost) {
-    const { data: report } = await supabase
-      .from('reports')
-      .select('post_id')
-      .eq('id', reportId)
-      .single()
-    if (report?.post_id) {
-      await supabase.from('posts').delete().eq('id', report.post_id)
-    }
-  }
-
-  await supabase
-    .from('reports')
-    .update({ status: action, admin_note: adminNote ?? null })
-    .eq('id', reportId)
+  // Operação atômica via RPC — read + update (+ optional delete) em uma única transação
+  // Elimina TOCTTOU entre verificar post_id e deletar o post
+  await supabase.rpc('resolve_report_atomic', {
+    p_report_id:   reportId,
+    p_status:      action,
+    p_admin_note:  adminNote?.trim().slice(0, 500) ?? null,
+    p_delete_post: deletePost ?? false,
+  })
 
   revalidatePath('/admin')
 }
