@@ -14,6 +14,7 @@ type Props = {
   userId: string | null
   filter?: string
   query?: string
+  species?: string
 }
 
 export default function FeedList({
@@ -24,6 +25,7 @@ export default function FeedList({
   userId,
   filter,
   query,
+  species,
 }: Props) {
   const [posts, setPosts]       = useState(initialPosts)
   const [likedSet, setLiked]   = useState(() => new Set(initialLikedIds))
@@ -50,7 +52,7 @@ export default function FeedList({
       async ([entry]) => {
         if (!entry.isIntersecting || loading) return
         setLoading(true)
-        const result = await loadMorePosts({ page, filter, query })
+        const result = await loadMorePosts({ page, filter, query, species })
         setPosts(prev => [...prev, ...result.posts])
         setLiked(prev => new Set([...prev, ...result.likedIds]))
         setSaved(prev => new Set([...prev, ...result.savedIds]))
@@ -64,7 +66,7 @@ export default function FeedList({
     const sentinel = sentinelRef.current
     if (sentinel) observer.observe(sentinel)
     return () => { if (sentinel) observer.unobserve(sentinel) }
-  }, [page, hasMore, loading, filter, query])
+  }, [page, hasMore, loading, filter, query, species])
 
   if (posts.length === 0) {
     return (

@@ -1,9 +1,10 @@
 import { Suspense } from 'react'
-import { SlidersHorizontal, MapPin, AlertTriangle } from 'lucide-react'
+import { MapPin, AlertTriangle } from 'lucide-react'
 import { supaServer } from '@/lib/supabase/server'
 import FeedFilters from '@/components/FeedFilters'
 import FeedList from '@/components/FeedList'
 import SearchBar from '@/components/SearchBar'
+import FilterButton from '@/components/FilterButton'
 import NotificationBell from '@/components/NotificationBell'
 import { countUnread } from '@/lib/notifications'
 import type { FeedPost, PostType } from '@/types'
@@ -28,9 +29,9 @@ const PAGE_SIZE = 20
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; q?: string }>
+  searchParams: Promise<{ filter?: string; q?: string; species?: string }>
 }) {
-  const { filter, q } = await searchParams
+  const { filter, q, species } = await searchParams
   const supabase = await supaServer()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -56,6 +57,10 @@ export default async function FeedPage({
 
   if (q?.trim()) {
     query = query.or(`caption.ilike.%${q.trim()}%,neighborhood.ilike.%${q.trim()}%`)
+  }
+
+  if (species) {
+    query = query.eq('pets.species', species)
   }
 
   const { data: posts } = await query
@@ -110,12 +115,7 @@ export default async function FeedPage({
           }>
             <SearchBar />
           </Suspense>
-          <button
-            className="w-12 h-12 rounded-btn bg-blue flex items-center justify-center shadow-btn shrink-0"
-            aria-label="Filtros"
-          >
-            <SlidersHorizontal size={18} className="text-white" />
-          </button>
+          <FilterButton hasActiveFilter={!!species} />
         </div>
       </header>
 
@@ -147,7 +147,7 @@ export default async function FeedPage({
       {/* Feed com infinite scroll */}
       <div className="px-4 pb-4">
         <FeedList
-          key={`${filter ?? ''}-${q ?? ''}`}
+          key={`${filter ?? ''}-${q ?? ''}-${species ?? ''}`}
           initialPosts={(posts ?? []) as unknown as FeedPost[]}
           initialLikedIds={likedIds}
           initialSavedIds={savedIds}
@@ -155,6 +155,7 @@ export default async function FeedPage({
           userId={user?.id ?? null}
           filter={filter}
           query={q}
+          species={species}
         />
       </div>
     </div>

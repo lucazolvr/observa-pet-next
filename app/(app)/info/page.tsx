@@ -1,8 +1,19 @@
 import { supaServer } from '@/lib/supabase/server'
 import InfoTabs from '@/components/InfoTabs'
 import type { HeatEntry, Article } from '@/types'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Informações',
+  description: 'Mapa de calor de avistamentos, artigos sobre bem-estar animal e dicas de como ajudar os pets de rua em São Luís, MA.',
+  openGraph: {
+    title: 'Informações · ObservaPet',
+    description: 'Dados e recursos sobre animais em situação de rua em São Luís.',
+    type: 'website',
+  },
+}
 
 export default async function InfoPage() {
   const supabase = await supaServer()

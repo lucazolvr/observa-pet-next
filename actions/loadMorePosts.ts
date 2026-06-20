@@ -25,10 +25,12 @@ export async function loadMorePosts({
   page,
   filter,
   query,
+  species,
 }: {
   page: number
   filter?: string
   query?: string
+  species?: string
 }): Promise<{
   posts: FeedPost[]
   likedIds: string[]
@@ -54,6 +56,10 @@ export async function loadMorePosts({
   if (query?.trim()) {
     const term = query.trim()
     q = q.or(`caption.ilike.%${term}%,neighborhood.ilike.%${term}%`)
+  }
+
+  if (species) {
+    q = q.eq('pets.species', species)
   }
 
   const { data: posts } = await q

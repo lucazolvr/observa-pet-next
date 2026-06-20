@@ -1,7 +1,18 @@
 import { fetchOngs } from '@/lib/ongs'
 import OngCard from '@/components/OngCard'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'ONGs',
+  description: 'Conheça as organizações de proteção animal parceiras do ObservaPet em São Luís, MA.',
+  openGraph: {
+    title: 'ONGs parceiras · ObservaPet',
+    description: 'Apoie as organizações que cuidam dos animais de rua em São Luís.',
+    type: 'website',
+  },
+}
 
 export default async function OngsPage() {
   const ongs = await fetchOngs()

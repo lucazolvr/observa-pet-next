@@ -1,8 +1,41 @@
 import { fetchPet, fetchComments } from '@/lib/pet'
 import { supaServer } from '@/lib/supabase/server'
 import PetProfile from '@/components/PetProfile'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  try {
+    const { id } = await params
+    const { pet } = await fetchPet(id)
+    const photo = pet.posts[0]?.photos?.[0]?.url
+    const name  = pet.name ?? 'Animal'
+    const place = pet.neighborhood ?? 'São Luís, MA'
+    const title = `${name} · ObservaPet`
+    const desc  = `Animal em situação de rua em ${place}. Ajude a encontrar um lar ou um resgatador.`
+    return {
+      title,
+      description: desc,
+      openGraph: {
+        title,
+        description: desc,
+        images: photo ? [{ url: photo, width: 800, height: 600, alt: name }] : [],
+        type: 'article',
+      },
+      twitter: {
+        card: photo ? 'summary_large_image' : 'summary',
+        title,
+        description: desc,
+        images: photo ? [photo] : [],
+      },
+    }
+  } catch {
+    return { title: 'Animal · ObservaPet' }
+  }
+}
 
 export default async function PetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
