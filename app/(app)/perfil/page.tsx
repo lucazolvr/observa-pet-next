@@ -1,9 +1,19 @@
-export default function PerfilPage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3 px-4">
-      <span className="text-5xl">👤</span>
-      <p className="text-lg font-bold text-ink">Meu Perfil</p>
-      <p className="text-muted text-sm text-center">Em breve: perfil, publicações, salvos e histórico de ajudas.</p>
-    </div>
-  )
+import { redirect } from 'next/navigation'
+import { supaServer } from '@/lib/supabase/server'
+import { fetchProfile, fetchUserPosts } from '@/lib/profile'
+import PerfilView from '@/components/PerfilView'
+
+export const dynamic = 'force-dynamic'
+
+export default async function PerfilPage() {
+  const supabase = await supaServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const [profile, posts] = await Promise.all([
+    fetchProfile(user.id),
+    fetchUserPosts(user.id),
+  ])
+
+  return <PerfilView profile={profile} posts={posts} />
 }

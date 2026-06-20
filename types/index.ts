@@ -45,14 +45,24 @@ export type Ong = {
   id: string
   owner_id: string | null
   name: string
-  city: string
+  city: string | null
   mission: string | null
   avatar_url: string | null
   cover_url: string | null
-  verified: boolean
-  goal_cents: number
-  raised_cents: number
+  verified: boolean | null
+  goal_cents: number | null
+  raised_cents: number | null
+  whatsapp: string | null
   created_at: string
+}
+
+export type UserPostItem = {
+  id: string
+  type: PostType
+  neighborhood: string | null
+  created_at: string
+  photos: PostPhoto[]
+  pet: Pick<Pet, 'id' | 'name' | 'status' | 'species'>
 }
 
 export type FeedPost = {
