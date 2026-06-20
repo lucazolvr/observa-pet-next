@@ -73,3 +73,29 @@ export type FeedPost = {
   saves_count: { count: number }[]
   comments_count: { count: number }[]
 }
+
+export type Comment = {
+  id: string
+  text: string
+  created_at: string
+  author: Pick<Profile, 'name' | 'avatar_url'>
+}
+
+export type PetPost = {
+  id: string
+  type: PostType
+  caption: string | null
+  location_text: string | null
+  neighborhood: string | null
+  created_at: string
+  photos: PostPhoto[]
+  likes_count: { count: number }[]
+  helps_count: { count: number }[]
+  comments_count: { count: number }[]
+}
+
+export type PetWithPosts = Pet & {
+  creator: Pick<Profile, 'id' | 'name' | 'role' | 'avatar_url' | 'verified'> | null
+  ong: Pick<Ong, 'id' | 'name' | 'avatar_url' | 'verified'> | null
+  posts: PetPost[]
+}

@@ -1,6 +1,12 @@
 import BottomNav from '@/components/BottomNav'
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode
+  modal: React.ReactNode
+}) {
   return (
     <div className="flex justify-center min-h-dvh bg-bg">
       <div className="w-full max-w-[430px] relative min-h-dvh flex flex-col">
@@ -8,6 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
         <BottomNav />
+        {modal}
       </div>
     </div>
   )
