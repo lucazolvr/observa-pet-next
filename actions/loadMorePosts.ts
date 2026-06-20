@@ -5,8 +5,8 @@ import { escapeSearch } from '@/lib/security'
 import type { FeedPost } from '@/types'
 
 const FEED_SELECT = `
-  id, pet_id, author_id, type, caption, location_text, neighborhood, created_at,
-  pet:pets(id, species, name, breed, age_text, gender, status, overview, neighborhood, traits),
+  *,
+  pet:pets(*),
   photos:post_photos(url, position),
   author:profiles(id, name, avatar_url, verified),
   likes_count:post_likes(count),
