@@ -9,30 +9,6 @@ import { supaBrowser } from '@/lib/supabase/client'
 import PawMark from '@/components/PawMark'
 import { Eye, EyeOff, Loader2, Mail, Lock, User, Building2 } from 'lucide-react'
 
-// ─── Papel ────────────────────────────────────────────────────────────────────
-const ROLES = [
-  {
-    value: 'tutor',
-    icon: '🏠',
-    label: 'Tutor',
-    desc: 'Tenho um animal ou cuido de um',
-  },
-  {
-    value: 'protetor',
-    icon: '🛡️',
-    label: 'Protetor',
-    desc: 'Resgate e abrigo de animais de rua',
-  },
-  {
-    value: 'voluntario',
-    icon: '🤝',
-    label: 'Voluntário',
-    desc: 'Apoio causas de proteção animal',
-  },
-] as const
-
-type Role = (typeof ROLES)[number]['value']
-
 // ─── Input ─────────────────────────────────────────────────────────────────────
 function Input({
   icon: Icon,
@@ -91,7 +67,6 @@ export default function LoginPage() {
 
   // campos
   const [name, setName]               = useState('')
-  const [role, setRole]               = useState<Role>('tutor')
   const [email, setEmail]             = useState('')
   const [password, setPassword]       = useState('')
   const [confirmPw, setConfirmPw]     = useState('')
@@ -123,7 +98,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name: name.trim(), role } },
+        options: { data: { name: name.trim() } },
       })
       setLoading(false)
 
@@ -250,30 +225,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Papel */}
-              <div>
-                <label className="text-xs font-semibold text-body mb-2 block">Você é…</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROLES.map(r => (
-                    <button
-                      key={r.value}
-                      type="button"
-                      onClick={() => setRole(r.value)}
-                      className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-card border-2 text-center transition-all ${
-                        role === r.value
-                          ? 'border-blue bg-blue-soft'
-                          : 'border-border bg-card'
-                      }`}
-                    >
-                      <span className="text-xl leading-none">{r.icon}</span>
-                      <span className={`text-[11px] font-bold leading-tight ${
-                        role === r.value ? 'text-blue' : 'text-ink'
-                      }`}>{r.label}</span>
-                      <span className="text-[9px] text-muted leading-tight">{r.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
             </>
           )}
 
