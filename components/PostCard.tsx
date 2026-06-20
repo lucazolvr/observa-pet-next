@@ -122,7 +122,7 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
         </div>
         <StatusBadge status={pet.status} />
         <button
-          onClick={() => setShowReport(true)}
+          onClick={() => { if (!userId) { router.push('/login'); return }; setShowReport(true) }}
           className="w-8 h-8 flex items-center justify-center rounded-full text-muted"
           aria-label="Mais opções"
         >

@@ -24,15 +24,17 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  const isAuthRoute   = pathname.startsWith('/login')
+  const isAuthRoute    = pathname.startsWith('/login')
     || pathname.startsWith('/auth')
     || pathname.startsWith('/verificar-email')
     || pathname.startsWith('/esqueci-senha')
     || pathname.startsWith('/redefinir-senha')
-  const isAdminRoute  = pathname.startsWith('/admin')
+  const isPrivateRoute = pathname.startsWith('/adicionar')
+    || pathname.startsWith('/notificacoes')
+  const isAdminRoute   = pathname.startsWith('/admin')
 
-  // Redireciona para login se não autenticado
-  if (!isAuthRoute && !user) {
+  // Rotas que exigem login obrigatório
+  if (isPrivateRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
