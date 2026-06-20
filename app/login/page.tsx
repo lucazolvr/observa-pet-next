@@ -72,14 +72,12 @@ export default function LoginPage() {
   const [showPw, setShowPw]       = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  const [loading, setLoading]       = useState(false)
-  const [error, setError]           = useState<string | null>(null)
-  const [showResend, setShowResend] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState<string | null>(null)
 
   function switchMode(m: 'login' | 'signup') {
     setMode(m)
     setError(null)
-    setShowResend(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -111,7 +109,9 @@ export default function LoginPage() {
 
     if (error) {
       if (error.message.toLowerCase().includes('email not confirmed')) {
-        setShowResend(true)
+        // Reenvia código automaticamente e manda direto para verificação
+        await supabase.auth.resend({ type: 'signup', email })
+        router.push(`/verificar-email?email=${encodeURIComponent(email)}`)
       } else {
         setError('Email ou senha incorretos.')
       }
@@ -154,19 +154,6 @@ export default function LoginPage() {
             </button>
           ))}
         </div>
-
-        {/* Banner email não confirmado */}
-        {showResend && (
-          <div className="bg-[#fff1ee] border border-coral/20 rounded-btn p-4 flex items-center justify-between gap-3">
-            <p className="text-coral text-sm font-medium">Email não confirmado.</p>
-            <Link
-              href={`/verificar-email?email=${encodeURIComponent(email)}`}
-              className="text-coral text-sm font-bold shrink-0"
-            >
-              Verificar →
-            </Link>
-          </div>
-        )}
 
         {/* Formulário */}
         <form onSubmit={handleSubmit} className="space-y-4">
