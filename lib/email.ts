@@ -13,7 +13,7 @@ function createTransport() {
   })
 }
 
-const FROM = `ObservaPet <${process.env.GMAIL_USER}>`
+const FROM = 'ObservaPet <observapet@gmail.com>'
 
 export async function sendOngApprovedEmail(to: string, ongName: string) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return

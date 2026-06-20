@@ -1,4 +1,4 @@
-export type UserRole = 'tutor' | 'protetor' | 'voluntario' | 'ong'
+export type UserRole = 'tutor' | 'protetor' | 'voluntario' | 'ong' | 'admin'
 export type PostType = 'avistado' | 'resgate' | 'adocao' | 'perdido' | 'tratamento'
 export type PetStatus = 'avistado' | 'urgente' | 'adocao' | 'tratamento' | 'resgatado'
 export type PetSpecies = 'cachorro' | 'gato' | 'outro'
@@ -11,7 +11,23 @@ export type Profile = {
   city: string
   bio: string | null
   verified: boolean
+  banned: boolean
+  ban_reason: string | null
+  suspended_until: string | null
   created_at: string
+}
+
+export type AdminUserRow = {
+  id: string
+  name: string
+  role: UserRole
+  city: string | null
+  verified: boolean
+  banned: boolean
+  ban_reason: string | null
+  suspended_until: string | null
+  created_at: string
+  email?: string
 }
 
 export type Pet = {
@@ -69,9 +85,11 @@ export type Report = {
   status: 'pending' | 'resolved' | 'dismissed'
   admin_note: string | null
   created_at: string
+  reporter?: Pick<Profile, 'id' | 'name'> | null
   post?: Pick<FeedPost, 'id' | 'type' | 'caption' | 'photos'> & {
+    neighborhood: string | null
     pet: Pick<Pet, 'name' | 'species'>
-    author: Pick<Profile, 'name'>
+    author: Pick<Profile, 'id' | 'name'>
   }
 }
 

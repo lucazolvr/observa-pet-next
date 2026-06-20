@@ -47,19 +47,42 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Protege /admin: só role='admin'
-  if (isAdminRoute && user) {
+  // Verifica ban/suspend e protege /admin
+  if (user && (isAdminRoute || isPrivateRoute)) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, banned, suspended_until')
       .eq('id', user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    // Banido → desloga e manda pro login
+    if (profile?.banned) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      url.searchParams.set('error', 'banned')
+      return NextResponse.redirect(url)
+    }
+
+    // Suspenso → bloqueia rotas privadas
+    if (profile?.suspended_until && new Date(profile.suspended_until) > new Date()) {
+      if (isPrivateRoute) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // Admin
+    if (isAdminRoute && profile?.role !== 'admin') {
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)
     }
+  } else if (!user && isAdminRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
   return response
