@@ -1,32 +1,34 @@
 'use server'
 
 import { supaServer } from '@/lib/supabase/server'
+import { requireAuth, rateLimit } from '@/lib/security'
+import { ongSchema } from '@/lib/schemas'
 import { redirect } from 'next/navigation'
 
 export async function registerOng(formData: FormData): Promise<never> {
   const supabase = await supaServer()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await requireAuth(supabase).catch(() => null)
   if (!user) redirect('/login')
 
-  const name    = (formData.get('name')    as string).trim()
-  const cnpj    = (formData.get('cnpj')    as string).trim()
-  const city    = (formData.get('city')    as string).trim()
-  const whatsapp = (formData.get('whatsapp') as string).trim()
-  const mission  = (formData.get('mission')  as string).trim()
+  // 3 cadastros de ONG por hora por IP/usuário
+  await rateLimit(supabase, `register_ong:${user.id}`, 3, 3600)
 
-  if (!name || !cnpj || !city || !whatsapp || !mission) {
-    throw new Error('Preencha todos os campos obrigatórios')
-  }
+  const parsed = ongSchema.parse({
+    name:     formData.get('name')     ?? '',
+    cnpj:     (formData.get('cnpj') as string ?? '').replace(/\D/g, ''),
+    city:     formData.get('city')     ?? '',
+    whatsapp: (formData.get('whatsapp') as string ?? '').replace(/\D/g, ''),
+    mission:  formData.get('mission')  ?? '',
+  })
 
   const { data: ong, error } = await supabase
     .from('ongs')
-    .insert({ owner_id: user.id, name, cnpj, city, whatsapp, mission, status: 'pending' })
+    .insert({ owner_id: user.id, ...parsed, status: 'pending' })
     .select('id')
     .single()
 
   if (error || !ong) throw new Error('Erro ao cadastrar ONG')
 
-  // Atualiza role do usuário para 'ong'
   await supabase.from('profiles').update({ role: 'ong' }).eq('id', user.id)
 
   redirect('/cadastro-ong/aguardando')

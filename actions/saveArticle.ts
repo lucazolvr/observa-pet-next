@@ -1,29 +1,32 @@
 'use server'
 
 import { supaServer } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/security'
+import { articleSchema } from '@/lib/schemas'
 import { revalidatePath } from 'next/cache'
-import type { ArticleCategory } from '@/types'
 
 export async function saveArticle(formData: FormData) {
   const supabase = await supaServer()
+  await requireAdmin(supabase)
 
-  const id        = formData.get('id') as string | null
-  const title     = (formData.get('title') as string).trim()
-  const category  = formData.get('category') as ArticleCategory
-  const excerpt   = (formData.get('excerpt') as string | null)?.trim() || null
-  const body      = (formData.get('body') as string).trim()
-  const cover_url = (formData.get('cover_url') as string | null)?.trim() || null
-  const author    = (formData.get('author') as string | null)?.trim() || null
-  const read_minutes = Number(formData.get('read_minutes')) || null
+  const raw = {
+    title:        formData.get('title'),
+    category:     formData.get('category'),
+    excerpt:      formData.get('excerpt') || '',
+    body:         formData.get('body'),
+    cover_url:    formData.get('cover_url') || '',
+    author:       formData.get('author') || '',
+    read_minutes: formData.get('read_minutes'),
+    published_at: formData.get('published_at') || null,
+  }
 
-  if (!title || !body || !category) throw new Error('Campos obrigatórios faltando')
-
-  const payload = { title, category, excerpt, body, cover_url, author, read_minutes, published_at: new Date().toISOString() }
+  const parsed = articleSchema.parse(raw)
+  const id = (formData.get('id') as string | null) || null
 
   if (id) {
-    await supabase.from('articles').update(payload).eq('id', id)
+    await supabase.from('articles').update(parsed).eq('id', id)
   } else {
-    await supabase.from('articles').insert(payload)
+    await supabase.from('articles').insert(parsed)
   }
 
   revalidatePath('/info')
@@ -32,6 +35,8 @@ export async function saveArticle(formData: FormData) {
 
 export async function deleteArticle(articleId: string) {
   const supabase = await supaServer()
+  await requireAdmin(supabase)
+
   await supabase.from('articles').delete().eq('id', articleId)
   revalidatePath('/info')
   revalidatePath('/admin')

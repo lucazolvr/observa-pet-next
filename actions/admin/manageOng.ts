@@ -1,10 +1,13 @@
 'use server'
+
 import { supaServer } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/security'
 import { revalidatePath } from 'next/cache'
 
 export async function deleteOng(ongId: string) {
   const supabase = await supaServer()
-  // Notifica o dono antes de deletar
+  await requireAdmin(supabase)
+
   const { data: ong } = await supabase
     .from('ongs').select('owner_id, name').eq('id', ongId).single()
   if (ong?.owner_id) {
@@ -20,7 +23,9 @@ export async function deleteOng(ongId: string) {
 
 export async function toggleVerifyOng(ongId: string, verified: boolean) {
   const supabase = await supaServer()
-  await supabase.from('ongs').update({ verified }).eq('id', ongId)
+  await requireAdmin(supabase)
+
+  await supabase.from('ongs').update({ verified: !!verified }).eq('id', ongId)
   revalidatePath('/admin')
   revalidatePath('/ongs')
 }

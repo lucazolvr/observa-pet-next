@@ -1,6 +1,7 @@
 'use server'
 
 import { supaServer } from '@/lib/supabase/server'
+import { escapeSearch } from '@/lib/security'
 import type { FeedPost } from '@/types'
 
 const FEED_SELECT = `
@@ -54,7 +55,7 @@ export async function loadMorePosts({
   }
 
   if (query?.trim()) {
-    const term = query.trim()
+    const term = escapeSearch(query.trim())
     q = q.or(`caption.ilike.%${term}%,neighborhood.ilike.%${term}%`)
   }
 

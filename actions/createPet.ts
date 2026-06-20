@@ -2,30 +2,58 @@
 
 import { redirect } from 'next/navigation'
 import { supaServer } from '@/lib/supabase/server'
+import { requireAuth, safeExt, safeJsonArray, rateLimit } from '@/lib/security'
+import { petSchema } from '@/lib/schemas'
+
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5 MB
+const MAX_PHOTOS = 6
 
 export async function createPet(formData: FormData): Promise<never> {
   const supabase = await supaServer()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await requireAuth(supabase).catch(() => null)
   if (!user) redirect('/login')
 
-  const traits = JSON.parse((formData.get('traits') as string) ?? '[]') as string[]
+  // 10 posts por hora por usuário
+  await rateLimit(supabase, `create_pet:${user.id}`, 10, 3600)
+
+  const parsed = petSchema.parse({
+    species:       formData.get('species') ?? '',
+    type:          formData.get('tipo')    ?? '',
+    name:          formData.get('name')    ?? '',
+    breed:         formData.get('breed')   ?? '',
+    age_text:      formData.get('age_text') ?? '',
+    gender:        formData.get('gender')   ?? '',
+    status:        formData.get('status')   ?? '',
+    overview:      formData.get('overview') ?? '',
+    personality:   formData.get('personality') ?? '',
+    neighborhood:  formData.get('neighborhood') ?? '',
+    caption:       formData.get('caption')  ?? '',
+    location_text: formData.get('location_text') ?? '',
+  })
+
+  const traits = safeJsonArray(formData.get('traits') as string | null)
+    .filter(t => typeof t === 'string' && t.length <= 50)
+    .slice(0, 10)
+
+  const lat = formData.get('lat') ? parseFloat(formData.get('lat') as string) : null
+  const lng = formData.get('lng') ? parseFloat(formData.get('lng') as string) : null
 
   const { data: pet, error: petError } = await supabase
     .from('pets')
     .insert({
-      created_by:  user.id,
-      species:     formData.get('species') as string,
-      name:        (formData.get('name') as string) || null,
-      breed:       (formData.get('breed') as string) || null,
-      age_text:    (formData.get('age_text') as string) || null,
-      gender:      (formData.get('gender') as string) || null,
-      status:      formData.get('status') as string,
-      overview:    (formData.get('overview') as string) || null,
-      personality: (formData.get('personality') as string) || null,
+      created_by:   user.id,
+      species:      parsed.species,
+      name:         parsed.name,
+      breed:        parsed.breed,
+      age_text:     parsed.age_text,
+      gender:       parsed.gender,
+      status:       parsed.status,
+      overview:     parsed.overview,
+      personality:  parsed.personality,
+      neighborhood: parsed.neighborhood,
       traits,
-      neighborhood: (formData.get('neighborhood') as string) || null,
-      lat: formData.get('lat') ? parseFloat(formData.get('lat') as string) : null,
-      lng: formData.get('lng') ? parseFloat(formData.get('lng') as string) : null,
+      lat: isFinite(lat ?? NaN) ? lat : null,
+      lng: isFinite(lng ?? NaN) ? lng : null,
     })
     .select('id')
     .single()
@@ -37,21 +65,22 @@ export async function createPet(formData: FormData): Promise<never> {
     .insert({
       pet_id:        pet.id,
       author_id:     user.id,
-      type:          formData.get('tipo') as string,
-      caption:       (formData.get('caption') as string) || null,
-      location_text: (formData.get('location_text') as string) || null,
-      neighborhood:  (formData.get('neighborhood') as string) || null,
+      type:          parsed.type,
+      caption:       parsed.caption,
+      location_text: parsed.location_text,
+      neighborhood:  parsed.neighborhood,
     })
     .select('id')
     .single()
 
   if (postError || !post) throw new Error('Erro ao criar post')
 
-  const photos = formData.getAll('photos') as File[]
+  const photos = (formData.getAll('photos') as File[]).slice(0, MAX_PHOTOS)
   for (let i = 0; i < photos.length; i++) {
     const file = photos[i]
     if (!file || file.size === 0) continue
-    const ext = file.name.split('.').pop() ?? 'jpg'
+    if (file.size > MAX_PHOTO_SIZE) continue // skip files that are too large
+    const ext  = safeExt(file.name)
     const path = `${user.id}/${pet.id}/${i}.${ext}`
     const { error: uploadError } = await supabase.storage
       .from('pets')

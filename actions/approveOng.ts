@@ -1,11 +1,13 @@
 'use server'
 
 import { supaServer } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/security'
 import { revalidatePath } from 'next/cache'
 import { sendOngApprovedEmail } from '@/lib/email'
 
 export async function approveOng(ongId: string) {
   const supabase = await supaServer()
+  await requireAdmin(supabase)
   await supabase
     .from('ongs')
     .update({ status: 'approved', rejection_reason: null })

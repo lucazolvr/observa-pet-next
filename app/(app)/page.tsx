@@ -7,6 +7,7 @@ import SearchBar from '@/components/SearchBar'
 import FilterButton from '@/components/FilterButton'
 import NotificationBell from '@/components/NotificationBell'
 import { countUnread } from '@/lib/notifications'
+import { escapeSearch } from '@/lib/security'
 import type { FeedPost, PostType } from '@/types'
 import type { Metadata } from 'next'
 
@@ -56,7 +57,8 @@ export default async function FeedPage({
   }
 
   if (q?.trim()) {
-    query = query.or(`caption.ilike.%${q.trim()}%,neighborhood.ilike.%${q.trim()}%`)
+    const term = escapeSearch(q.trim())
+    query = query.or(`caption.ilike.%${term}%,neighborhood.ilike.%${term}%`)
   }
 
   if (species) {
