@@ -56,6 +56,15 @@ export type Ong = {
   created_at: string
 }
 
+export type Notification = {
+  id: string
+  user_id: string
+  type: string
+  text: string
+  read: boolean
+  created_at: string
+}
+
 export type UserPostItem = {
   id: string
   type: PostType

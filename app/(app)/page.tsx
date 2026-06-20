@@ -1,7 +1,9 @@
-import { Bell, SlidersHorizontal, MapPin, AlertTriangle } from 'lucide-react'
+import { SlidersHorizontal, MapPin, AlertTriangle } from 'lucide-react'
 import { supaServer } from '@/lib/supabase/server'
 import PostCard from '@/components/PostCard'
 import FeedFilters from '@/components/FeedFilters'
+import NotificationBell from '@/components/NotificationBell'
+import { countUnread } from '@/lib/notifications'
 import type { FeedPost } from '@/types'
 import type { PostType } from '@/types'
 
@@ -65,6 +67,7 @@ export default async function FeedPage({
     helpedSet = new Set(helps?.map(h => h.post_id) ?? [])
   }
 
+  const unreadCount = user ? await countUnread(user.id) : 0
   const userName = user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? 'Visitante'
   const userInitials = getInitials(userName)
 
@@ -86,10 +89,7 @@ export default async function FeedPage({
               São Luís, MA
             </p>
           </div>
-          <button className="relative w-10 h-10 flex items-center justify-center rounded-avatar bg-card shadow-soft">
-            <Bell size={20} className="text-body" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-coral" />
-          </button>
+          <NotificationBell initialUnread={unreadCount} userId={user?.id ?? null} />
         </div>
 
         {/* Search bar */}
