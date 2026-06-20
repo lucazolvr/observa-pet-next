@@ -2,7 +2,8 @@ import { fetchOngs } from '@/lib/ongs'
 import OngCard from '@/components/OngCard'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+// Revalida a cada 5 minutos — ONGs mudam raramente
+export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'ONGs',

@@ -2,8 +2,12 @@ import { z } from 'zod'
 
 // ─── Primitivos reutilizáveis ─────────────────────────────────────────────────
 
-const shortText  = (max = 100) => z.string().max(max).transform(s => s.trim())
-const optText    = (max = 100) => shortText(max).optional().or(z.literal('')).transform(v => v || null)
+// z.preprocess garante compatibilidade com Zod v4 e trata strings vazias como null
+const optText = (max = 100) => z.preprocess(
+  v => (typeof v !== 'string' || v.trim() === '') ? null : v.trim(),
+  z.string().max(max).nullable(),
+)
+const shortText  = (max = 100) => z.string().min(1).max(max).trim()
 const phone      = z.string().regex(/^\d{10,15}$/, 'WhatsApp inválido').transform(s => s.replace(/\D/g, ''))
 const cnpj       = z.string().regex(/^\d{14}$/, 'CNPJ deve ter 14 dígitos')
 
@@ -61,7 +65,11 @@ export const petSchema = z.object({
   name:         optText(60),
   breed:        optText(60),
   age_text:     optText(40),
-  gender:       z.enum(['macho', 'femea', '']).optional().transform(v => v || null),
+  // O formulário envia 'Macho', 'Fêmea', 'Não identificado' ou '' — aceitar como string livre
+  gender: z.preprocess(
+    v => (!v || v === 'Não identificado') ? null : v,
+    z.string().max(50).nullable(),
+  ),
   status:       z.string().max(30),
   overview:     optText(500),
   personality:  optText(500),

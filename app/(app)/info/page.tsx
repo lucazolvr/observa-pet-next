@@ -3,7 +3,8 @@ import InfoTabs from '@/components/InfoTabs'
 import type { HeatEntry, Article } from '@/types'
 import type { Metadata } from 'next'
 
-export const dynamic = 'force-dynamic'
+// Revalida a cada 5 minutos — artigos e mapa de calor mudam raramente
+export const revalidate = 300
 
 export const metadata: Metadata = {
   title: 'Informações',
