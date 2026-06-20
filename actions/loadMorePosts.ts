@@ -6,9 +6,9 @@ import type { FeedPost } from '@/types'
 
 const FEED_SELECT = `
   *,
-  pet:pets(*),
+  pet:pets!pet_id(*),
   photos:post_photos(url, position),
-  author:profiles(id, name, avatar_url, verified),
+  author:profiles!author_id(id, name, avatar_url, verified),
   likes_count:post_likes(count),
   helps_count:post_helps(count),
   saves_count:post_saves(count),
