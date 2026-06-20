@@ -74,6 +74,25 @@ export type FeedPost = {
   comments_count: { count: number }[]
 }
 
+export type ArticleCategory = 'legislacao' | 'cuidados' | 'campanhas' | 'eventos'
+
+export type Article = {
+  id: string
+  title: string
+  excerpt: string | null
+  body: string
+  category: ArticleCategory
+  cover_url: string | null
+  author: string | null
+  read_minutes: number | null
+  published_at: string
+}
+
+export type HeatEntry = {
+  neighborhood: string
+  count: number
+}
+
 export type Comment = {
   id: string
   text: string
