@@ -11,12 +11,25 @@ const jakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'ObservaPet',
+  title: { default: 'ObservaPet', template: '%s · ObservaPet' },
   description: 'Rede social para animais em situação de rua em São Luís, MA',
+  applicationName: 'ObservaPet',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'ObservaPet' },
+  formatDetection: { telephone: false },
+  openGraph: {
+    type: 'website',
+    siteName: 'ObservaPet',
+    title: 'ObservaPet',
+    description: 'Rede social para animais em situação de rua em São Luís, MA',
+  },
 }
 
 export const viewport = {
   themeColor: '#2a6af0',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

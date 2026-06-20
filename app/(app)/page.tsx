@@ -1,31 +1,37 @@
+import { Suspense } from 'react'
 import { SlidersHorizontal, MapPin, AlertTriangle } from 'lucide-react'
 import { supaServer } from '@/lib/supabase/server'
-import PostCard from '@/components/PostCard'
 import FeedFilters from '@/components/FeedFilters'
+import FeedList from '@/components/FeedList'
+import SearchBar from '@/components/SearchBar'
 import NotificationBell from '@/components/NotificationBell'
 import { countUnread } from '@/lib/notifications'
-import type { FeedPost } from '@/types'
-import type { PostType } from '@/types'
+import type { FeedPost, PostType } from '@/types'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Feed',
+  description: 'Veja os animais em situação de rua reportados em São Luís, MA',
+}
 
 function getInitials(name: string) {
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
 
 const FILTER_MAP: Record<string, PostType> = {
-  avistado:   'avistado',
-  adocao:     'adocao',
-  resgate:    'resgate',
-  tratamento: 'tratamento',
+  avistado: 'avistado', adocao: 'adocao',
+  resgate: 'resgate',   tratamento: 'tratamento',
 }
+
+const PAGE_SIZE = 20
 
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>
+  searchParams: Promise<{ filter?: string; q?: string }>
 }) {
-  const { filter } = await searchParams
+  const { filter, q } = await searchParams
   const supabase = await supaServer()
-
   const { data: { user } } = await supabase.auth.getUser()
 
   // Build feed query
@@ -42,18 +48,22 @@ export default async function FeedPage({
       comments_count:comments(count)
     `)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(PAGE_SIZE)
 
   if (filter && FILTER_MAP[filter]) {
     query = query.eq('type', FILTER_MAP[filter])
   }
 
+  if (q?.trim()) {
+    query = query.or(`caption.ilike.%${q.trim()}%,neighborhood.ilike.%${q.trim()}%`)
+  }
+
   const { data: posts } = await query
 
-  // Fetch user interaction flags
-  let likedSet = new Set<string>()
-  let savedSet = new Set<string>()
-  let helpedSet = new Set<string>()
+  // User interaction flags
+  let likedIds:  string[] = []
+  let savedIds:  string[] = []
+  let helpedIds: string[] = []
 
   if (user && posts?.length) {
     const postIds = posts.map(p => p.id)
@@ -62,14 +72,13 @@ export default async function FeedPage({
       supabase.from('post_saves').select('post_id').eq('user_id', user.id).in('post_id', postIds),
       supabase.from('post_helps').select('post_id').eq('user_id', user.id).in('post_id', postIds),
     ])
-    likedSet  = new Set(likes?.map(l => l.post_id) ?? [])
-    savedSet  = new Set(saves?.map(s => s.post_id) ?? [])
-    helpedSet = new Set(helps?.map(h => h.post_id) ?? [])
+    likedIds  = likes?.map(l => l.post_id)  ?? []
+    savedIds  = saves?.map(s => s.post_id)  ?? []
+    helpedIds = helps?.map(h => h.post_id)  ?? []
   }
 
   const unreadCount = user ? await countUnread(user.id) : 0
-  const userName = user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? 'Visitante'
-  const userInitials = getInitials(userName)
+  const userName    = user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? 'Visitante'
 
   return (
     <div className="flex flex-col">
@@ -80,7 +89,7 @@ export default async function FeedPage({
             className="w-10 h-10 rounded-avatar flex items-center justify-center text-white text-sm font-bold shrink-0"
             style={{ background: 'linear-gradient(135deg, #ff9a6b, #ff6a55)' }}
           >
-            {userInitials}
+            {getInitials(userName)}
           </div>
           <div className="flex-1">
             <p className="text-[15px] font-bold text-ink">Olá, {userName.split(' ')[0]} 👋</p>
@@ -92,11 +101,15 @@ export default async function FeedPage({
           <NotificationBell initialUnread={unreadCount} userId={user?.id ?? null} />
         </div>
 
-        {/* Search bar */}
+        {/* Search + filtro */}
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-btn px-4 py-3">
-            <span className="text-sm text-muted">Buscar animal, bairro, ONG…</span>
-          </div>
+          <Suspense fallback={
+            <div className="flex-1 flex items-center gap-2 bg-card border border-border rounded-btn px-4 py-3">
+              <span className="text-sm text-muted">Buscar animal, bairro…</span>
+            </div>
+          }>
+            <SearchBar />
+          </Suspense>
           <button
             className="w-12 h-12 rounded-btn bg-blue flex items-center justify-center shadow-btn shrink-0"
             aria-label="Filtros"
@@ -124,34 +137,25 @@ export default async function FeedPage({
         </div>
       </div>
 
-      {/* Section header */}
       <div className="flex items-center justify-between px-4 mb-3">
-        <p className="text-[16px] font-extrabold text-ink tracking-tight">Na sua região</p>
+        <p className="text-[16px] font-extrabold text-ink tracking-tight">
+          {q ? `Resultados para "${q}"` : 'Na sua região'}
+        </p>
         <button className="text-blue text-sm font-semibold">Ver no mapa</button>
       </div>
 
-      {/* Feed */}
-      <div className="px-4 space-y-4">
-        {!posts || posts.length === 0 ? (
-          <div className="text-center py-16 space-y-3">
-            <div className="flex justify-center opacity-20">
-              <span className="text-6xl">🐾</span>
-            </div>
-            <p className="text-body font-semibold">Nenhum animal encontrado</p>
-            <p className="text-muted text-sm">Seja o primeiro a reportar um animal na sua região!</p>
-          </div>
-        ) : (
-          (posts as FeedPost[]).map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              userId={user?.id ?? null}
-              initialLiked={likedSet.has(post.id)}
-              initialSaved={savedSet.has(post.id)}
-              initialHelped={helpedSet.has(post.id)}
-            />
-          ))
-        )}
+      {/* Feed com infinite scroll */}
+      <div className="px-4 pb-4">
+        <FeedList
+          key={`${filter ?? ''}-${q ?? ''}`}
+          initialPosts={(posts ?? []) as unknown as FeedPost[]}
+          initialLikedIds={likedIds}
+          initialSavedIds={savedIds}
+          initialHelpedIds={helpedIds}
+          userId={user?.id ?? null}
+          filter={filter}
+          query={q}
+        />
       </div>
     </div>
   )

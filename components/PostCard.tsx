@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2, MoreHorizontal } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2, MoreHorizontal, Share2 } from 'lucide-react'
 import ReportModal from '@/components/ReportModal'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -96,6 +96,17 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
 
   function goToPetProfile() {
     router.push(`/pet/${pet.id}`)
+  }
+
+  async function handleShare() {
+    const url = `${window.location.origin}/pet/${pet.id}`
+    const text = `${pet.name ?? 'Animal'} precisa de ajuda em ${pet.neighborhood ?? 'São Luís'}! 🐾`
+    if (navigator.share) {
+      await navigator.share({ title: 'ObservaPet', text, url })
+    } else {
+      await navigator.clipboard.writeText(url)
+      showToast('Link copiado!')
+    }
   }
 
   return (
@@ -219,6 +230,14 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
           aria-label="Salvar"
         >
           <Bookmark size={18} fill={saved ? 'currentColor' : 'none'} />
+        </button>
+
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-chip text-sm font-semibold text-muted transition-colors"
+          aria-label="Compartilhar"
+        >
+          <Share2 size={18} />
         </button>
 
         <div className="flex-1" />
