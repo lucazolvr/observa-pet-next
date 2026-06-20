@@ -1,9 +1,10 @@
 'use client'
 
 import { useRef, useState, useTransition } from 'react'
-import { X, Camera } from 'lucide-react'
+import { X, Camera, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { updateProfile } from '@/actions/updateProfile'
+import { compressImage, checkNsfw } from '@/lib/imageUtils'
 import type { Profile } from '@/types'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -20,17 +21,25 @@ type Props = {
 
 export default function EditProfileSheet({ profile, onClose }: Props) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [compressedAvatar, setCompressedAvatar] = useState<File | null>(null)
+  const [processingPhoto, setProcessingPhoto] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { setError('Foto deve ter no máximo 5 MB'); return }
-    setAvatarPreview(URL.createObjectURL(file))
+    if (file.size > 10 * 1024 * 1024) { setError('Foto deve ter no máximo 10 MB'); return }
+    setProcessingPhoto(true)
     setError(null)
+    const nsfw = await checkNsfw(file)
+    if (!nsfw.safe) { setError(nsfw.reason ?? 'Imagem imprópria'); setProcessingPhoto(false); return }
+    const compressed = await compressImage(file)
+    setCompressedAvatar(compressed)
+    setAvatarPreview(URL.createObjectURL(compressed))
+    setProcessingPhoto(false)
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -38,6 +47,8 @@ export default function EditProfileSheet({ profile, onClose }: Props) {
     const form = formRef.current
     if (!form) return
     const fd = new FormData(form)
+    // Substitui o file original pelo comprimido
+    if (compressedAvatar) fd.set('avatar', compressedAvatar)
     setError(null)
     startTransition(async () => {
       try {
@@ -91,7 +102,10 @@ export default function EditProfileSheet({ profile, onClose }: Props) {
                 </span>
               )}
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <Camera size={20} className="text-white" />
+                {processingPhoto
+                  ? <Loader2 size={20} className="text-white animate-spin" />
+                  : <Camera size={20} className="text-white" />
+                }
               </div>
             </button>
             <input

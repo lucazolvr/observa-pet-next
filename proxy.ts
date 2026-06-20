@@ -9,9 +9,7 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
+        getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
@@ -24,20 +22,38 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
-  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/auth')
 
+  const isAuthRoute   = pathname.startsWith('/login') || pathname.startsWith('/auth')
+  const isAdminRoute  = pathname.startsWith('/admin')
+
+  // Redireciona para login se não autenticado
   if (!isAuthRoute && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
+  // Redireciona para feed se já logado e tentando acessar login
   if (pathname === '/login' && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
+  }
+
+  // Protege /admin: só role='admin'
+  if (isAdminRoute && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   return response

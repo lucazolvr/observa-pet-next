@@ -1,5 +1,6 @@
-import { useRef } from 'react'
-import { X, Plus } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { X, Plus, Loader2 } from 'lucide-react'
+import { compressImage, checkNsfw } from '@/lib/imageUtils'
 import type { FormState, FormAction } from '@/app/(app)/adicionar/page'
 
 const TIPOS = [
@@ -14,14 +15,31 @@ type Props = { state: FormState; dispatch: React.Dispatch<FormAction> }
 
 export default function Step1Aviso({ state, dispatch }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [processing, setProcessing] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
-  function handlePhotoAdd(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoAdd(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
-    const valid = files.filter(f => f.size <= 5 * 1024 * 1024)
+    if (!files.length) return
+    setProcessing(true)
+    setPhotoError(null)
+
     const remaining = 3 - state.photos.length
-    valid.slice(0, remaining).forEach(f =>
-      dispatch({ type: 'ADD_PHOTO', payload: f })
-    )
+    const toProcess = files.slice(0, remaining)
+
+    for (const file of toProcess) {
+      if (file.size > 10 * 1024 * 1024) {
+        setPhotoError('Uma ou mais fotos excedem 10MB'); continue
+      }
+      const nsfw = await checkNsfw(file)
+      if (!nsfw.safe) {
+        setPhotoError(nsfw.reason ?? 'Imagem imprópria detectada'); continue
+      }
+      const compressed = await compressImage(file)
+      dispatch({ type: 'ADD_PHOTO', payload: compressed })
+    }
+
+    setProcessing(false)
     if (inputRef.current) inputRef.current.value = ''
   }
 
@@ -101,7 +119,16 @@ export default function Step1Aviso({ state, dispatch }: Props) {
           className="hidden"
           onChange={handlePhotoAdd}
         />
-        <p className="text-[11px] text-muted mt-2">Máximo 5MB por foto</p>
+        {processing && (
+          <div className="flex items-center gap-2 mt-2 text-muted text-xs">
+            <Loader2 size={12} className="animate-spin" />
+            Analisando e comprimindo…
+          </div>
+        )}
+        {photoError && <p className="text-[11px] text-coral mt-2">{photoError}</p>}
+        {!processing && !photoError && (
+          <p className="text-[11px] text-muted mt-2">Imagens comprimidas automaticamente · máx. 10MB</p>
+        )}
       </div>
     </div>
   )

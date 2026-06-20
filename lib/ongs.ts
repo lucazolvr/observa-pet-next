@@ -8,6 +8,7 @@ export async function fetchOngs(): Promise<Ong[]> {
   const { data } = await supabase
     .from('ongs')
     .select(ONG_FIELDS)
+    .eq('status', 'approved')
     .order('verified', { ascending: false })
     .order('raised_cents', { ascending: false })
   return (data ?? []) as unknown as Ong[]

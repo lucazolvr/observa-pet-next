@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2 } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2, MoreHorizontal } from 'lucide-react'
+import ReportModal from '@/components/ReportModal'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supaBrowser } from '@/lib/supabase/client'
@@ -52,6 +53,7 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
   const [helped, setHelped] = useState(initialHelped)
   const [likeCount, setLikeCount] = useState(count(post.likes_count))
   const [helpCount, setHelpCount] = useState(count(post.helps_count))
+  const [showReport, setShowReport] = useState(false)
 
   const pet = post.pet
   const author = post.author
@@ -97,6 +99,7 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
   }
 
   return (
+  <>
     <article className="bg-card rounded-card shadow-card overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3">
@@ -118,6 +121,13 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
           </p>
         </div>
         <StatusBadge status={pet.status} />
+        <button
+          onClick={() => setShowReport(true)}
+          className="w-8 h-8 flex items-center justify-center rounded-full text-muted"
+          aria-label="Mais opções"
+        >
+          <MoreHorizontal size={18} />
+        </button>
       </div>
 
       {/* Caption */}
@@ -226,5 +236,10 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
         </button>
       </div>
     </article>
+
+    {showReport && (
+      <ReportModal postId={post.id} onClose={() => setShowReport(false)} />
+    )}
+  </>
   )
 }

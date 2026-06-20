@@ -41,6 +41,8 @@ export type PostPhoto = {
   position: number
 }
 
+export type OngStatus = 'pending' | 'approved' | 'rejected'
+
 export type Ong = {
   id: string
   owner_id: string | null
@@ -53,7 +55,24 @@ export type Ong = {
   goal_cents: number | null
   raised_cents: number | null
   whatsapp: string | null
+  cnpj: string | null
+  status: OngStatus | null
+  rejection_reason: string | null
   created_at: string
+}
+
+export type Report = {
+  id: string
+  reporter_id: string | null
+  post_id: string
+  reason: string
+  status: 'pending' | 'resolved' | 'dismissed'
+  admin_note: string | null
+  created_at: string
+  post?: Pick<FeedPost, 'id' | 'type' | 'caption' | 'photos'> & {
+    pet: Pick<Pet, 'name' | 'species'>
+    author: Pick<Profile, 'name'>
+  }
 }
 
 export type Notification = {
