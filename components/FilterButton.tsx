@@ -40,7 +40,7 @@ function FilterDrawer({ onClose }: { onClose: () => void }) {
 
       {/* Sheet */}
       <div className="fixed bottom-0 inset-x-0 z-50 flex justify-center">
-        <div className="w-full max-w-[430px] bg-bg rounded-t-sheet pb-[env(safe-area-inset-bottom)]">
+        <div className="w-full max-w-[430px] bg-bg rounded-t-sheet pb-[env(safe-area-inset-bottom)] max-h-[85vh] overflow-y-auto">
           {/* Handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-10 h-1 rounded-full bg-border" />

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { MapPin, AlertTriangle } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { supaServer } from '@/lib/supabase/server'
 import FeedFilters from '@/components/FeedFilters'
 import FeedList from '@/components/FeedList'
@@ -124,20 +124,7 @@ export default async function FeedPage({
         <FeedFilters />
       </div>
 
-      {/* Urgency banner */}
-      <div className="px-4 mb-4">
-        <div className="bg-[#fff1ee] rounded-card p-4 flex items-start gap-3">
-          <AlertTriangle size={18} className="text-coral shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-coral">3 casos urgentes perto de você</p>
-            <p className="text-xs text-[#ff6a55]/80 mt-0.5">
-              Animais em São Luís que precisam de ajuda hoje
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between px-4 mb-3">
+<div className="flex items-center justify-between px-4 mb-3">
         <p className="text-[16px] font-extrabold text-ink tracking-tight">
           {q ? `Resultados para "${q}"` : 'Na sua região'}
         </p>
