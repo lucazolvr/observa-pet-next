@@ -6,9 +6,10 @@ import ReportsQueue from '@/components/admin/ReportsQueue'
 import ArticleEditorPanel from '@/components/admin/ArticleEditor'
 import UsersPanel from '@/components/admin/UsersPanel'
 import PostsPanel from '@/components/admin/PostsPanel'
-import type { Ong, Report, Article, AdminUserRow, FeedPost } from '@/types'
+import EventsLog from '@/components/admin/EventsLog'
+import type { Ong, Report, Article, AdminUserRow, FeedPost, AppEvent } from '@/types'
 
-type Tab = 'ongs' | 'reports' | 'posts' | 'artigos' | 'usuarios'
+type Tab = 'ongs' | 'reports' | 'posts' | 'artigos' | 'usuarios' | 'logs'
 
 type Props = {
   ongs: Ong[]
@@ -16,6 +17,7 @@ type Props = {
   posts: FeedPost[]
   articles: Article[]
   users: AdminUserRow[]
+  events: AppEvent[]
   ongsPending: number
   reportsPending: number
 }
@@ -40,7 +42,7 @@ function TabBtn({ active, badge, onClick, children }: {
   )
 }
 
-export default function AdminTabs({ ongs, reports, posts, articles, users, ongsPending, reportsPending }: Props) {
+export default function AdminTabs({ ongs, reports, posts, articles, users, events, ongsPending, reportsPending }: Props) {
   const [tab, setTab] = useState<Tab>('ongs')
 
   return (
@@ -51,6 +53,7 @@ export default function AdminTabs({ ongs, reports, posts, articles, users, ongsP
         <TabBtn active={tab === 'posts'}    onClick={() => setTab('posts')}>Posts</TabBtn>
         <TabBtn active={tab === 'artigos'}  onClick={() => setTab('artigos')}>Artigos</TabBtn>
         <TabBtn active={tab === 'usuarios'} onClick={() => setTab('usuarios')}>Usuários</TabBtn>
+        <TabBtn active={tab === 'logs'}     onClick={() => setTab('logs')}>Logs</TabBtn>
       </div>
 
       {tab === 'ongs'      && <OngQueue ongs={ongs} />}
@@ -58,6 +61,7 @@ export default function AdminTabs({ ongs, reports, posts, articles, users, ongsP
       {tab === 'posts'     && <PostsPanel posts={posts} />}
       {tab === 'artigos'   && <ArticleEditorPanel articles={articles} />}
       {tab === 'usuarios'  && <UsersPanel users={users} />}
+      {tab === 'logs'      && <EventsLog events={events} />}
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { supaServer } from './supabase/server'
-import type { Ong, Report, Article, AdminUserRow, FeedPost } from '@/types'
+import type { Ong, Report, Article, AdminUserRow, FeedPost, AppEvent } from '@/types'
 
 export async function fetchPendingOngs(): Promise<Ong[]> {
   const supabase = await supaServer()
@@ -117,6 +117,23 @@ export async function fetchAdminUserEmail(userId: string): Promise<string | null
   const supabase = await supaServer()
   const { data: { user } } = await supabase.auth.admin.getUserById(userId)
   return user?.email ?? null
+}
+
+export async function fetchAdminEvents(page = 0): Promise<AppEvent[]> {
+  const supabase = await supaServer()
+  const { data } = await supabase
+    .from('events')
+    .select(`
+      id, event_type, metadata, created_at,
+      user:profiles!user_id(id, name),
+      post:posts!post_id(
+        id, type, neighborhood,
+        pet:pets(name, species)
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .range(page * 100, page * 100 + 99)
+  return (data ?? []) as unknown as AppEvent[]
 }
 
 export async function fetchAdminArticles(): Promise<Article[]> {

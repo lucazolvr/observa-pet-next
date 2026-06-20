@@ -4,6 +4,7 @@ import { CheckCircle2, Star, MessageCircle, Phone } from 'lucide-react'
 import { supaBrowser } from '@/lib/supabase/client'
 import { helpUrl } from '@/lib/whatsapp'
 import { useToast } from '@/components/Toast'
+import { logEvent } from '@/actions/logEvent'
 import PetCarousel from '@/components/PetCarousel'
 import CommentList from '@/components/CommentList'
 import type { PetWithPosts, Comment } from '@/types'
@@ -50,6 +51,7 @@ export default function PetProfile({ pet, latestPost, initialComments, userId, i
   async function handleHelp() {
     openWhatsApp()
     if (userId && latestPost) {
+      logEvent('message', latestPost.id).catch(() => {})
       await supabase.from('post_helps').upsert({ post_id: latestPost.id, user_id: userId })
       showToast('Redirecionando para o WhatsApp 🐾')
     }

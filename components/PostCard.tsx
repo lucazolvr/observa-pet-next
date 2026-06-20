@@ -9,6 +9,7 @@ import { ptBR } from 'date-fns/locale'
 import { supaBrowser } from '@/lib/supabase/client'
 import { helpUrl } from '@/lib/whatsapp'
 import { useToast } from '@/components/Toast'
+import { logEvent } from '@/actions/logEvent'
 import StatusBadge from '@/components/StatusBadge'
 import PawMark from '@/components/PawMark'
 import type { FeedPost } from '@/types'
@@ -86,6 +87,7 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
     if (!userId) { router.push('/login'); return }
     const url = helpUrl(pet.name, pet.neighborhood)
     window.open(url, '_blank', 'noopener,noreferrer')
+    logEvent('help', post.id).catch(() => {})
     if (!helped) {
       setHelped(true)
       setHelpCount(c => c + 1)
@@ -101,7 +103,9 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
   async function handleShare() {
     const url = `${window.location.origin}/pet/${pet.id}`
     const text = `${pet.name ?? 'Animal'} precisa de ajuda em ${pet.neighborhood ?? 'São Luís'}! 🐾`
-    if (navigator.share) {
+    const hasShare = 'share' in navigator
+    logEvent('share', post.id, { method: hasShare ? 'native' : 'clipboard' }).catch(() => {})
+    if (hasShare) {
       await navigator.share({ title: 'ObservaPet', text, url })
     } else {
       await navigator.clipboard.writeText(url)

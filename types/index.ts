@@ -174,3 +174,19 @@ export type PetWithPosts = Pet & {
   ong: Pick<Ong, 'id' | 'name' | 'avatar_url' | 'verified'> | null
   posts: PetPost[]
 }
+
+export type AppEventType = 'share' | 'help' | 'message'
+
+export type AppEvent = {
+  id: string
+  event_type: AppEventType
+  metadata: Record<string, unknown> | null
+  created_at: string
+  user: Pick<Profile, 'id' | 'name'> | null
+  post: {
+    id: string
+    type: PostType
+    neighborhood: string | null
+    pet: Pick<Pet, 'name' | 'species'>
+  } | null
+}
