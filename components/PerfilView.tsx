@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { BadgeCheck, Pencil } from 'lucide-react'
+import { BadgeCheck, Pencil, LogOut } from 'lucide-react'
 import EditProfileSheet from '@/components/EditProfileSheet'
 import UserPostGrid from '@/components/UserPostGrid'
+import { supaBrowser } from '@/lib/supabase/client'
 import type { Profile, UserPostItem } from '@/types'
 
 const ROLE_LABEL: Record<string, string> = {
@@ -21,6 +23,14 @@ type Props = {
 
 export default function PerfilView({ profile, posts }: Props) {
   const [editing, setEditing] = useState(false)
+  const router = useRouter()
+  const supabase = supaBrowser()
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   const initials = profile.name
     .split(' ')
@@ -70,14 +80,23 @@ export default function PerfilView({ profile, posts }: Props) {
           </div>
         </div>
 
-        {/* Editar perfil */}
-        <button
-          onClick={() => setEditing(true)}
-          className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-btn bg-card border border-border text-sm font-semibold text-ink"
-        >
-          <Pencil size={15} />
-          Editar perfil
-        </button>
+        {/* Ações */}
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={() => setEditing(true)}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-btn bg-card border border-border text-sm font-semibold text-ink"
+          >
+            <Pencil size={15} />
+            Editar perfil
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn bg-card border border-border text-sm font-semibold text-coral"
+            aria-label="Sair"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
       </div>
 
       {/* Divider + contagem */}
