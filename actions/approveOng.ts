@@ -29,11 +29,8 @@ export async function approveOng(ongId: string) {
       }),
     ])
 
-    // Busca email do usuário via auth admin
-    const { data: { user } } = await supabase.auth.admin.getUserById(ong.owner_id)
-    if (user?.email) {
-      await sendOngApprovedEmail(user.email, ong.name)
-    }
+    const { data: ownerEmail } = await supabase.rpc('get_user_email', { user_id: ong.owner_id })
+    if (ownerEmail) await sendOngApprovedEmail(ownerEmail as string, ong.name)
   }
 
   revalidatePath('/admin')

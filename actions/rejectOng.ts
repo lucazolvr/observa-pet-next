@@ -24,8 +24,8 @@ export async function rejectOng(ongId: string, reason: string) {
       user_id: ong.owner_id, type: 'system',
       text: `Sua ONG "${ong.name}" não foi aprovada. Motivo: ${safeReason}`,
     })
-    const { data: { user } } = await supabase.auth.admin.getUserById(ong.owner_id)
-    if (user?.email) await sendOngRejectedEmail(user.email, ong.name, safeReason)
+    const { data: ownerEmail } = await supabase.rpc('get_user_email', { user_id: ong.owner_id })
+    if (ownerEmail) await sendOngRejectedEmail(ownerEmail as string, ong.name, safeReason)
   }
 
   revalidatePath('/admin')

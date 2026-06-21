@@ -115,8 +115,8 @@ export async function fetchAdminUsers(): Promise<AdminUserRow[]> {
 
 export async function fetchAdminUserEmail(userId: string): Promise<string | null> {
   const supabase = await supaServer()
-  const { data: { user } } = await supabase.auth.admin.getUserById(userId)
-  return user?.email ?? null
+  const { data } = await supabase.rpc('get_user_email', { user_id: userId })
+  return (data as string | null) ?? null
 }
 
 export async function fetchAdminEvents(page = 0): Promise<AppEvent[]> {

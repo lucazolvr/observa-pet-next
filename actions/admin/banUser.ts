@@ -58,6 +58,6 @@ export async function changeUserEmail(userId: string, newEmail: string) {
   await requireAdmin(supabase)
   const { email } = emailSchema.parse({ email: newEmail })
 
-  await supabase.auth.admin.updateUserById(userId, { email })
+  await supabase.rpc('update_user_email', { user_id: userId, new_email: email })
   revalidatePath('/admin')
 }
