@@ -109,8 +109,8 @@ export default function AdminCreatePostModal({ onClose, onCreated }: Props) {
 
     startTransition(async () => {
       const result = await createPetAdmin(fd)
-      if (result.error) {
-        dispatch({ type: 'SET_ERRORS', payload: { submit: result.error } })
+      if (result.error || !result.post) {
+        dispatch({ type: 'SET_ERRORS', payload: { submit: result.error ?? 'Erro desconhecido' } })
       } else {
         onCreated(result.post)
         onClose()
