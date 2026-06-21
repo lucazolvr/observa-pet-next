@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useTransition, useRef } from 'react'
-import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff, FileText, Globe, ImagePlus, Loader2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Save, Eye, EyeOff, FileText, Globe, ImagePlus, Loader2, CheckSquare, Square } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { saveArticle, deleteArticle } from '@/actions/saveArticle'
+import { saveArticle, deleteArticle, deleteArticlesBulk } from '@/actions/saveArticle'
 import { uploadArticleCover } from '@/actions/admin/uploadArticleCover'
 import { compressImage } from '@/lib/imageUtils'
 import type { Article, ArticleCategory } from '@/types'
@@ -246,15 +246,13 @@ function ArticleForm({ article, onDone }: { article?: Article; onDone: () => voi
   )
 }
 
-export default function ArticleEditorPanel({ articles }: { articles: Article[] }) {
+export default function ArticleEditorPanel({ articles: initialArticles }: { articles: Article[] }) {
+  const [articles, setArticles]    = useState(initialArticles)
   const [editing, setEditing]      = useState<Article | 'new' | null>(null)
   const [isPending, startTransition] = useTransition()
   const [search, setSearch]        = useState('')
-
-  function handleDelete(id: string) {
-    if (!confirm('Excluir este artigo permanentemente?')) return
-    startTransition(async () => { await deleteArticle(id) })
-  }
+  const [selecting, setSelecting]  = useState(false)
+  const [selected, setSelected]    = useState<Set<string>>(new Set())
 
   if (editing) {
     return (
@@ -270,6 +268,47 @@ export default function ArticleEditorPanel({ articles }: { articles: Article[] }
   const filtered  = search
     ? articles.filter(a => a.title.toLowerCase().includes(search.toLowerCase()))
     : articles
+
+  const filteredIds  = filtered.map(a => a.id)
+  const allSelected  = filteredIds.length > 0 && filteredIds.every(id => selected.has(id))
+
+  function toggleOne(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    if (allSelected) {
+      setSelected(prev => { const n = new Set(prev); filteredIds.forEach(id => n.delete(id)); return n })
+    } else {
+      setSelected(prev => new Set([...prev, ...filteredIds]))
+    }
+  }
+
+  function exitSelecting() { setSelecting(false); setSelected(new Set()) }
+
+  function handleDelete(id: string) {
+    if (!confirm('Excluir este artigo permanentemente?')) return
+    startTransition(async () => {
+      await deleteArticle(id)
+      setArticles(prev => prev.filter(a => a.id !== id))
+    })
+  }
+
+  function handleBulkDelete() {
+    const ids = [...selected].filter(id => filteredIds.includes(id))
+    if (!ids.length) return
+    if (!confirm(`Excluir ${ids.length} artigo${ids.length > 1 ? 's' : ''}? Esta ação é irreversível.`)) return
+    startTransition(async () => {
+      await deleteArticlesBulk(ids)
+      setArticles(prev => prev.filter(a => !ids.includes(a.id)))
+      setSelected(new Set())
+      setSelecting(false)
+    })
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -294,71 +333,125 @@ export default function ArticleEditorPanel({ articles }: { articles: Article[] }
         ))}
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-2 bg-bg border border-border rounded-[14px] px-3 py-2.5">
-        <FileText size={14} className="text-muted shrink-0" />
-        <input
-          type="search"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Buscar artigo…"
-          className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted text-ink"
-        />
+      {/* Search + Selecionar */}
+      <div className="flex gap-2">
+        <div className="flex-1 flex items-center gap-2 bg-bg border border-border rounded-[14px] px-3 py-2.5">
+          <FileText size={14} className="text-muted shrink-0" />
+          <input
+            type="search"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar artigo…"
+            className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted text-ink"
+          />
+        </div>
+        <button
+          onClick={() => selecting ? exitSelecting() : setSelecting(true)}
+          className={`shrink-0 px-3 py-2 rounded-[14px] text-xs font-bold flex items-center gap-1.5 border transition-colors ${
+            selecting
+              ? 'bg-muted/10 text-muted border-border'
+              : 'bg-card border-border text-body hover:border-blue hover:text-blue'
+          }`}
+        >
+          {selecting ? <><X size={12} /> Cancelar</> : <><CheckSquare size={12} /> Selecionar</>}
+        </button>
       </div>
+
+      {/* Barra de seleção em lote */}
+      {selecting && (
+        <div className="flex items-center gap-3 px-3 py-2 bg-blue/5 border border-blue/20 rounded-[12px]">
+          <button
+            onClick={toggleAll}
+            className="flex items-center gap-1.5 text-xs font-semibold text-blue"
+          >
+            {allSelected ? <CheckSquare size={15} /> : <Square size={15} className="text-muted" />}
+            {allSelected ? 'Desmarcar todos' : 'Selecionar todos'}
+          </button>
+          <span className="text-xs text-muted ml-auto">
+            {selected.size > 0 ? `${selected.size} selecionado${selected.size > 1 ? 's' : ''}` : 'Nenhum selecionado'}
+          </span>
+          <button
+            onClick={handleBulkDelete}
+            disabled={selected.size === 0 || isPending}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-coral text-white text-xs font-bold disabled:opacity-40"
+          >
+            <Trash2 size={12} />
+            {isPending ? 'Excluindo…' : `Excluir${selected.size > 0 ? ` (${selected.size})` : ''}`}
+          </button>
+        </div>
+      )}
 
       {filtered.length === 0 && (
         <p className="text-muted text-sm text-center py-8">Nenhum artigo encontrado</p>
       )}
 
       <div className="flex flex-col gap-2">
-        {filtered.map(a => (
-          <div key={a.id} className="bg-card rounded-card shadow-card border border-border p-4 flex items-start gap-3">
-            {/* Cover thumbnail */}
-            {a.cover_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={a.cover_url} alt="" className="w-16 h-16 object-cover rounded-[10px] shrink-0" />
-            ) : (
-              <div className="w-16 h-16 rounded-[10px] bg-bg border border-border flex items-center justify-center shrink-0">
-                <FileText size={20} className="text-muted" />
-              </div>
-            )}
+        {filtered.map(a => {
+          const isSelected = selected.has(a.id)
+          return (
+            <div
+              key={a.id}
+              onClick={selecting ? () => toggleOne(a.id) : undefined}
+              className={`bg-card rounded-card shadow-card border p-4 flex items-start gap-3 transition-colors ${
+                isSelected ? 'border-blue/40 bg-blue/5' : 'border-border'
+              } ${selecting ? 'cursor-pointer' : ''}`}
+            >
+              {/* Checkbox ou cover */}
+              {selecting ? (
+                <div className="w-8 h-8 flex items-center justify-center shrink-0 mt-3">
+                  {isSelected
+                    ? <CheckSquare size={18} className="text-blue" />
+                    : <Square size={18} className="text-muted" />
+                  }
+                </div>
+              ) : a.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={a.cover_url} alt="" className="w-16 h-16 object-cover rounded-[10px] shrink-0" />
+              ) : (
+                <div className="w-16 h-16 rounded-[10px] bg-bg border border-border flex items-center justify-center shrink-0">
+                  <FileText size={20} className="text-muted" />
+                </div>
+              )}
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="font-semibold text-ink text-sm line-clamp-1">{a.title}</p>
-                {!a.published_at && (
-                  <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">RASCUNHO</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="font-semibold text-ink text-sm line-clamp-1">{a.title}</p>
+                  {!a.published_at && (
+                    <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-bold shrink-0">RASCUNHO</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted">
+                  {CATEGORIES.find(c => c.value === a.category)?.label ?? a.category}
+                  {a.read_minutes ? ` · ${a.read_minutes} min` : ''}
+                  {a.author ? ` · ${a.author}` : ''}
+                </p>
+                {a.published_at && (
+                  <p className="text-[11px] text-muted mt-0.5">
+                    Publicado {formatDistanceToNow(new Date(a.published_at), { locale: ptBR, addSuffix: true })}
+                  </p>
                 )}
               </div>
-              <p className="text-[11px] text-muted">
-                {CATEGORIES.find(c => c.value === a.category)?.label ?? a.category}
-                {a.read_minutes ? ` · ${a.read_minutes} min` : ''}
-                {a.author ? ` · ${a.author}` : ''}
-              </p>
-              {a.published_at && (
-                <p className="text-[11px] text-muted mt-0.5">
-                  Publicado {formatDistanceToNow(new Date(a.published_at), { locale: ptBR, addSuffix: true })}
-                </p>
+
+              {!selecting && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    onClick={() => setEditing(a)}
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-blue hover:bg-blue/10"
+                  >
+                    <Pencil size={15} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(a.id)}
+                    disabled={isPending}
+                    className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-coral hover:bg-coral/10 disabled:opacity-50"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               )}
             </div>
-
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => setEditing(a)}
-                className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-blue hover:bg-blue/10"
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                onClick={() => handleDelete(a.id)}
-                disabled={isPending}
-                className="w-8 h-8 flex items-center justify-center rounded-md text-muted hover:text-coral hover:bg-coral/10 disabled:opacity-50"
-              >
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

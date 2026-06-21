@@ -46,3 +46,13 @@ export async function deleteArticle(articleId: string) {
   revalidatePath('/info')
   revalidatePath('/admin')
 }
+
+export async function deleteArticlesBulk(articleIds: string[]) {
+  if (!articleIds.length) return
+  const supabase = await supaServer()
+  await requireAdmin(supabase)
+
+  await supabase.from('articles').delete().in('id', articleIds)
+  revalidatePath('/info')
+  revalidatePath('/admin')
+}
