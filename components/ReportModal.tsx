@@ -4,13 +4,13 @@ import { useState, useTransition } from 'react'
 import { X, Flag } from 'lucide-react'
 import { reportPost } from '@/actions/reportPost'
 
-const REASONS = [
-  'Conteúdo impróprio ou ofensivo',
-  'Imagem sensível ou explícita',
-  'Informação falsa ou enganosa',
-  'Maus-tratos a animais',
-  'Spam ou conteúdo irrelevante',
-  'Outro',
+const REASONS: { value: string; label: string }[] = [
+  { value: 'inappropriate',  label: 'Conteúdo impróprio ou ofensivo' },
+  { value: 'inappropriate',  label: 'Imagem sensível ou explícita' },
+  { value: 'fake',           label: 'Informação falsa ou enganosa' },
+  { value: 'animal_cruelty', label: 'Maus-tratos a animais' },
+  { value: 'spam',           label: 'Spam ou conteúdo irrelevante' },
+  { value: 'other',          label: 'Outro' },
 ]
 
 type Props = {
@@ -19,15 +19,21 @@ type Props = {
 }
 
 export default function ReportModal({ postId, onClose }: Props) {
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<{ value: string; label: string } | null>(null)
   const [isPending, startTransition] = useTransition()
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   function handleSubmit() {
     if (!selected) return
+    setError(null)
     startTransition(async () => {
-      await reportPost(postId, selected)
-      setSent(true)
+      try {
+        await reportPost(postId, selected.value)
+        setSent(true)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro ao enviar denúncia.')
+      }
     })
   }
 
@@ -61,20 +67,24 @@ export default function ReportModal({ postId, onClose }: Props) {
               <p className="text-sm text-muted mb-3">Selecione o motivo da denúncia:</p>
 
               <div className="flex flex-col gap-2">
-                {REASONS.map(reason => (
+                {REASONS.map(r => (
                   <button
-                    key={reason}
-                    onClick={() => setSelected(reason)}
+                    key={r.label}
+                    onClick={() => setSelected(r)}
                     className={`text-left px-4 py-3 rounded-card text-sm font-medium border transition-colors ${
-                      selected === reason
+                      selected?.label === r.label
                         ? 'border-coral bg-coral/5 text-coral'
                         : 'border-border bg-card text-body'
                     }`}
                   >
-                    {reason}
+                    {r.label}
                   </button>
                 ))}
               </div>
+
+              {error && (
+                <p className="mt-2 text-xs text-coral text-center">{error}</p>
+              )}
 
               <button
                 onClick={handleSubmit}

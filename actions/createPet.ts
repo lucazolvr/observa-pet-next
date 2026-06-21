@@ -16,7 +16,7 @@ export async function createPet(formData: FormData): Promise<CreatePetResult> {
   if (!user) redirect('/login')
 
   try {
-    await rateLimit(supabase, `create_pet:${user.id}`, 10, 3600)
+    await rateLimit(supabase, `create_pet:${user.id}`, 20, 3600)
   } catch {
     return { error: 'Muitas requisições. Tente novamente em breve.' }
   }

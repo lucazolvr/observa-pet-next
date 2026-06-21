@@ -10,7 +10,7 @@ export async function reportPost(postId: string, reason: string) {
   const user = await requireAuth(supabase)
 
   // 5 denúncias por hora por usuário
-  await rateLimit(supabase, `report:${user.id}`, 5, 3600)
+  await rateLimit(supabase, `report:${user.id}`, 10, 3600)
 
   const { reason: safeReason } = reportSchema.parse({ reason })
 
@@ -20,6 +20,5 @@ export async function reportPost(postId: string, reason: string) {
     reason:      safeReason,
     status:      'pending',
   })
-
-  revalidatePath('/')
+  // Não revalida '/' — evita desmontar o modal de confirmação antes de setSent(true)
 }
