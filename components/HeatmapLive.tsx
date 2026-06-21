@@ -25,6 +25,70 @@ const LEGEND = [
   { color: '#ef4444', label: '10+' },
 ]
 
+const CONCENTRATION_LEGEND = [
+  { color: '#f59e0b', label: 'Baixa' },
+  { color: '#f97316', label: 'Média' },
+  { color: '#ef4444', label: 'Alta concentração' },
+]
+
+function heatDotColor(count: number): string {
+  if (count <= 2) return '#60a5fa'
+  if (count <= 5) return '#f59e0b'
+  if (count <= 9) return '#f97316'
+  return '#ef4444'
+}
+
+function NeighborhoodRanking({ heatData }: { heatData: HeatEntry[] }) {
+  const top = [...heatData].sort((a, b) => b.count - a.count).slice(0, 5)
+  if (!top.length) return null
+  const max = top[0].count
+
+  return (
+    <div className="mx-4 mb-5 bg-card border border-border rounded-[16px] px-4 py-4">
+      {/* Legenda de concentração */}
+      <div className="flex items-center gap-3 mb-4">
+        {CONCENTRATION_LEGEND.map(({ color, label }) => (
+          <div key={label} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+            <span className="text-[11px] font-medium text-muted">{label}</span>
+          </div>
+        ))}
+      </div>
+
+      <h3 className="text-sm font-extrabold text-ink mb-3">Bairros com mais ocorrências</h3>
+
+      <div className="flex flex-col gap-3">
+        {top.map(({ neighborhood, count }) => {
+          const color = heatDotColor(count)
+          const pct   = Math.round((count / max) * 100)
+          return (
+            <div key={neighborhood} className="flex items-center gap-3">
+              {/* Dot */}
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+
+              {/* Nome */}
+              <span className="text-sm font-semibold text-ink w-32 shrink-0 truncate">
+                {neighborhood}
+              </span>
+
+              {/* Barra */}
+              <div className="flex-1 h-2 bg-bg rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct}%`, background: color }}
+                />
+              </div>
+
+              {/* Contagem */}
+              <span className="text-sm font-bold text-ink w-6 text-right shrink-0">{count}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 async function fetchDetails(supabase: ReturnType<typeof supaBrowser>): Promise<HeatDetail[]> {
   const since = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
   const { data } = await supabase
@@ -203,6 +267,9 @@ export default function HeatmapLive({ initialHeat }: Props) {
               Expandir mapa
             </button>
           </p>
+
+          {/* Ranking de bairros */}
+          <NeighborhoodRanking heatData={heatData} />
         </div>
       )}
     </>
