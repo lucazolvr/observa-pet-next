@@ -19,7 +19,7 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 function EventRow({ ev }: { ev: AppEvent }) {
-  const meta  = EVENT_META[ev.event_type]
+  const meta  = EVENT_META[ev.event_type] ?? { label: ev.event_type, Icon: Share2, color: 'bg-border text-muted' }
   const Icon  = meta.Icon
   const pet   = ev.post?.pet
   const extra = ev.metadata?.method === 'clipboard' ? ' · copiou link' : ''

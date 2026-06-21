@@ -16,11 +16,16 @@ export async function saveArticle(formData: FormData) {
     body:         formData.get('body'),
     cover_url:    formData.get('cover_url') || '',
     author:       formData.get('author') || '',
-    read_minutes: formData.get('read_minutes'),
+    read_minutes: formData.get('read_minutes') || null,
     published_at: formData.get('published_at') || null,
   }
 
-  const parsed = articleSchema.parse(raw)
+  const result = articleSchema.safeParse(raw)
+  if (!result.success) {
+    const msg = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ')
+    throw new Error(`Dados inválidos: ${msg}`)
+  }
+  const parsed = result.data
   const id = (formData.get('id') as string | null) || null
 
   if (id) {
