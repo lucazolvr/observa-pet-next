@@ -150,6 +150,12 @@ export type HeatEntry = {
   count: number
 }
 
+export type HeatDetail = {
+  neighborhood: string
+  total: number
+  byType: Record<string, number>  // tipo → count
+}
+
 export type Comment = {
   id: string
   text: string

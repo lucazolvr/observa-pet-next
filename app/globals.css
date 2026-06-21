@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   /* Brand colors */
@@ -35,6 +36,7 @@
   --animate-op-live:   op-live 1.2s ease-in-out infinite;
   --animate-op-ring:   op-ring 1.4s ease-out infinite;
   --animate-op-pop:    op-pop 0.4s cubic-bezier(.2,.8,.2,1) forwards;
+  --animate-slide-up:  slide-up 0.28s cubic-bezier(.2,.8,.2,1) forwards;
   --animate-slide-up:  slide-up 0.32s cubic-bezier(.2,.8,.2,1) forwards;
   --animate-toast-in:  toast-in 0.3s cubic-bezier(.2,.8,.2,1) forwards;
   --animate-toast-out: toast-out 0.2s ease-in forwards;

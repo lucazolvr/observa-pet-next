@@ -3,10 +3,11 @@
 import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Trash2, ExternalLink, Search, CheckSquare, Square, X } from 'lucide-react'
+import { Trash2, ExternalLink, Search, CheckSquare, Square, X, Plus } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { deletePost, deletePostsBulk } from '@/actions/admin/managePost'
+import AdminCreatePostModal from '@/components/admin/AdminCreatePostModal'
 import type { FeedPost } from '@/types'
 
 const TYPE_LABEL: Record<string, string> = {
@@ -106,6 +107,7 @@ export default function PostsPanel({ posts: initialPosts }: { posts: FeedPost[] 
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected]   = useState<Set<string>>(new Set())
   const [isPending, start]        = useTransition()
+  const [showCreate, setShowCreate] = useState(false)
 
   const visible = posts.filter(p => {
     if (typeFilter && p.type !== typeFilter) return false
