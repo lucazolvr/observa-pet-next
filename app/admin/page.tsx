@@ -1,8 +1,10 @@
+import { redirect } from 'next/navigation'
 import {
   fetchAllOngs, fetchAllReports, fetchAdminStats,
   fetchAdminArticles, fetchAdminUsers, fetchAdminPosts, fetchAdminEvents
 } from '@/lib/admin'
 import { fetchOfficialProfile, fetchOfficialPosts } from '@/actions/admin/officialProfile'
+import { supaServer } from '@/lib/supabase/server'
 import StatsCards from '@/components/admin/StatsCards'
 import AdminTabs from '@/components/admin/AdminTabs'
 
@@ -10,6 +12,17 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Admin · ObservaPet' }
 
 export default async function AdminPage() {
+  const supabase = await supaServer()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (profile?.role !== 'admin') redirect('/')
+
   const [stats, ongs, reports, posts, articles, users, events, officialProfile, officialPosts] = await Promise.all([
     fetchAdminStats(),
     fetchAllOngs(),
