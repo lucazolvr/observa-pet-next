@@ -91,6 +91,7 @@ export default function FeedList({
             initialLiked={likedSet.has(post.id)}
             initialSaved={savedSet.has(post.id)}
             initialHelped={helpedSet.has(post.id)}
+            onDelete={id => setPosts(prev => prev.filter(p => p.id !== id))}
           />
         ))}
       </div>

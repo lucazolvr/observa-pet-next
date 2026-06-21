@@ -1,10 +1,34 @@
+'use client'
+
+import { useState, useTransition } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { PawPrint } from 'lucide-react'
+import { PawPrint, Trash2 } from 'lucide-react'
 import StatusBadge from '@/components/StatusBadge'
+import { deleteOwnPost } from '@/actions/deleteOwnPost'
+import { useToast } from '@/components/Toast'
 import type { UserPostItem } from '@/types'
 
-export default function UserPostGrid({ posts }: { posts: UserPostItem[] }) {
+export default function UserPostGrid({ posts: initialPosts }: { posts: UserPostItem[] }) {
+  const [posts, setPosts] = useState(initialPosts)
+  const [isPending, startDelete] = useTransition()
+  const { showToast } = useToast()
+
+  function handleDelete(e: React.MouseEvent, postId: string) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!confirm('Excluir este post? Esta ação não pode ser desfeita.')) return
+    startDelete(async () => {
+      const res = await deleteOwnPost(postId)
+      if (res.error) {
+        showToast('Erro ao excluir post')
+      } else {
+        setPosts(prev => prev.filter(p => p.id !== postId))
+        showToast('Post excluído')
+      }
+    })
+  }
+
   if (posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted">
@@ -39,6 +63,7 @@ export default function UserPostGrid({ posts }: { posts: UserPostItem[] }) {
                 <PawPrint size={32} className="text-blue opacity-50" />
               </div>
             )}
+
             {/* Overlay info */}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-2.5 pt-6 pb-2">
               <p className="text-white text-xs font-semibold line-clamp-1">{petName}</p>
@@ -48,6 +73,16 @@ export default function UserPostGrid({ posts }: { posts: UserPostItem[] }) {
                 </div>
               )}
             </div>
+
+            {/* Delete button */}
+            <button
+              onClick={e => handleDelete(e, post.id)}
+              disabled={isPending}
+              className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/50 text-white/80 hover:bg-coral hover:text-white transition-colors disabled:opacity-50"
+              aria-label="Excluir post"
+            >
+              <Trash2 size={13} />
+            </button>
           </Link>
         )
       })}

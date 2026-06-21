@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2, MoreHorizontal, Share2 } from 'lucide-react'
+import { Heart, MessageCircle, Bookmark, MapPin, CheckCircle2, MoreHorizontal, Share2, Trash2, Flag } from 'lucide-react'
 import ReportModal from '@/components/ReportModal'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -10,6 +10,7 @@ import { supaBrowser } from '@/lib/supabase/client'
 import { helpUrl } from '@/lib/whatsapp'
 import { useToast } from '@/components/Toast'
 import { logEvent } from '@/actions/logEvent'
+import { deleteOwnPost } from '@/actions/deleteOwnPost'
 import StatusBadge from '@/components/StatusBadge'
 import PawMark from '@/components/PawMark'
 import OfficialBadge from '@/components/OfficialBadge'
@@ -43,9 +44,10 @@ type Props = {
   initialLiked: boolean
   initialSaved: boolean
   initialHelped: boolean
+  onDelete?: (postId: string) => void
 }
 
-export default function PostCard({ post, userId, initialLiked, initialSaved, initialHelped }: Props) {
+export default function PostCard({ post, userId, initialLiked, initialSaved, initialHelped, onDelete }: Props) {
   const router = useRouter()
   const { showToast } = useToast()
   const supabase = supaBrowser()
@@ -56,6 +58,36 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
   const [likeCount, setLikeCount] = useState(count(post.likes_count))
   const [helpCount, setHelpCount] = useState(count(post.helps_count))
   const [showReport, setShowReport] = useState(false)
+  const [showMenu, setShowMenu] = useState(false)
+  const [isDeleting, startDelete] = useTransition()
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const isOwner = !!userId && userId === post.author_id
+
+  useEffect(() => {
+    if (!showMenu) return
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showMenu])
+
+  function handleDelete() {
+    if (!confirm('Excluir este post? Esta ação não pode ser desfeita.')) return
+    setShowMenu(false)
+    startDelete(async () => {
+      const res = await deleteOwnPost(post.id)
+      if (res.error) {
+        showToast('Erro ao excluir post')
+      } else {
+        showToast('Post excluído')
+        onDelete?.(post.id)
+      }
+    })
+  }
 
   const pet = post.pet
   const author = post.author
@@ -138,13 +170,37 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
           </p>
         </div>
         <StatusBadge status={pet.status} />
-        <button
-          onClick={() => { if (!userId) { router.push('/login'); return }; setShowReport(true) }}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-muted"
-          aria-label="Mais opções"
-        >
-          <MoreHorizontal size={18} />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => { if (!userId) { router.push('/login'); return }; setShowMenu(v => !v) }}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-muted"
+            aria-label="Mais opções"
+            disabled={isDeleting}
+          >
+            <MoreHorizontal size={18} />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-9 z-20 bg-card border border-border rounded-[12px] shadow-card min-w-[160px] overflow-hidden">
+              {isOwner ? (
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-coral hover:bg-coral/5 transition-colors"
+                >
+                  <Trash2 size={15} />
+                  Excluir post
+                </button>
+              ) : (
+                <button
+                  onClick={() => { setShowMenu(false); setShowReport(true) }}
+                  className="flex items-center gap-2.5 w-full px-4 py-3 text-sm font-semibold text-body hover:bg-card/80 transition-colors"
+                >
+                  <Flag size={15} />
+                  Denunciar
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Caption */}
