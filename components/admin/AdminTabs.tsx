@@ -7,9 +7,10 @@ import ArticleEditorPanel from '@/components/admin/ArticleEditor'
 import UsersPanel from '@/components/admin/UsersPanel'
 import PostsPanel from '@/components/admin/PostsPanel'
 import EventsLog from '@/components/admin/EventsLog'
-import type { Ong, Report, Article, AdminUserRow, FeedPost, AppEvent } from '@/types'
+import OfficialProfilePanel from '@/components/admin/OfficialProfilePanel'
+import type { Ong, Report, Article, AdminUserRow, FeedPost, AppEvent, Profile } from '@/types'
 
-type Tab = 'ongs' | 'reports' | 'posts' | 'artigos' | 'usuarios' | 'logs'
+type Tab = 'ongs' | 'reports' | 'posts' | 'artigos' | 'usuarios' | 'logs' | 'oficial'
 
 type Props = {
   ongs: Ong[]
@@ -20,6 +21,8 @@ type Props = {
   events: AppEvent[]
   ongsPending: number
   reportsPending: number
+  officialProfile: Profile | null
+  officialPosts: FeedPost[]
 }
 
 function TabBtn({ active, badge, onClick, children }: {
@@ -42,7 +45,10 @@ function TabBtn({ active, badge, onClick, children }: {
   )
 }
 
-export default function AdminTabs({ ongs, reports, posts, articles, users, events, ongsPending, reportsPending }: Props) {
+export default function AdminTabs({
+  ongs, reports, posts, articles, users, events,
+  ongsPending, reportsPending, officialProfile, officialPosts,
+}: Props) {
   const [tab, setTab] = useState<Tab>('ongs')
 
   return (
@@ -54,6 +60,7 @@ export default function AdminTabs({ ongs, reports, posts, articles, users, event
         <TabBtn active={tab === 'artigos'}  onClick={() => setTab('artigos')}>Artigos</TabBtn>
         <TabBtn active={tab === 'usuarios'} onClick={() => setTab('usuarios')}>Usuários</TabBtn>
         <TabBtn active={tab === 'logs'}     onClick={() => setTab('logs')}>Logs</TabBtn>
+        <TabBtn active={tab === 'oficial'}  onClick={() => setTab('oficial')}>⭐ Oficial</TabBtn>
       </div>
 
       {tab === 'ongs'      && <OngQueue ongs={ongs} />}
@@ -62,6 +69,7 @@ export default function AdminTabs({ ongs, reports, posts, articles, users, event
       {tab === 'artigos'   && <ArticleEditorPanel articles={articles} />}
       {tab === 'usuarios'  && <UsersPanel users={users} />}
       {tab === 'logs'      && <EventsLog events={events} />}
+      {tab === 'oficial'   && <OfficialProfilePanel profile={officialProfile} posts={officialPosts} />}
     </div>
   )
 }

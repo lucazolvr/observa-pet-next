@@ -6,7 +6,7 @@ export async function fetchProfile(userId: string): Promise<Profile> {
   const supabase = await supaServer()
   const { data } = await supabase
     .from('profiles')
-    .select('id, name, role, avatar_url, city, bio, verified, created_at')
+    .select('id, name, role, avatar_url, city, bio, verified, is_official, created_at')
     .eq('id', userId)
     .single()
   if (!data) notFound()

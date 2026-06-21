@@ -2,6 +2,7 @@ import {
   fetchAllOngs, fetchAllReports, fetchAdminStats,
   fetchAdminArticles, fetchAdminUsers, fetchAdminPosts, fetchAdminEvents
 } from '@/lib/admin'
+import { fetchOfficialProfile, fetchOfficialPosts } from '@/actions/admin/officialProfile'
 import StatsCards from '@/components/admin/StatsCards'
 import AdminTabs from '@/components/admin/AdminTabs'
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Admin · ObservaPet' }
 
 export default async function AdminPage() {
-  const [stats, ongs, reports, posts, articles, users, events] = await Promise.all([
+  const [stats, ongs, reports, posts, articles, users, events, officialProfile, officialPosts] = await Promise.all([
     fetchAdminStats(),
     fetchAllOngs(),
     fetchAllReports(),
@@ -17,6 +18,8 @@ export default async function AdminPage() {
     fetchAdminArticles(),
     fetchAdminUsers(),
     fetchAdminEvents(),
+    fetchOfficialProfile(),
+    fetchOfficialPosts(),
   ])
 
   return (
@@ -35,6 +38,8 @@ export default async function AdminPage() {
         events={events}
         ongsPending={stats.ongsPending}
         reportsPending={stats.reports}
+        officialProfile={officialProfile}
+        officialPosts={officialPosts}
       />
     </div>
   )

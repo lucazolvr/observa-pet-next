@@ -12,6 +12,7 @@ import { useToast } from '@/components/Toast'
 import { logEvent } from '@/actions/logEvent'
 import StatusBadge from '@/components/StatusBadge'
 import PawMark from '@/components/PawMark'
+import OfficialBadge from '@/components/OfficialBadge'
 import type { FeedPost } from '@/types'
 
 const POST_TYPE_LABEL: Record<string, string> = {
@@ -125,11 +126,12 @@ export default function PostCard({ post, userId, initialLiked, initialSaved, ini
           {getInitials(author.name)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <span className="text-[14.5px] font-bold text-ink truncate">{author.name}</span>
             {author.verified && (
               <CheckCircle2 size={13} className="text-blue shrink-0" />
             )}
+            {author.is_official && <OfficialBadge size="sm" />}
           </div>
           <p className="text-[12px] text-muted">
             {POST_TYPE_LABEL[post.type] ?? post.type} · {timeAgo}

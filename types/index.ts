@@ -11,6 +11,7 @@ export type Profile = {
   city: string
   bio: string | null
   verified: boolean
+  is_official: boolean
   banned: boolean
   ban_reason: string | null
   suspended_until: string | null

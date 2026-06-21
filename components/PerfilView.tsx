@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { BadgeCheck, Pencil, LogOut } from 'lucide-react'
 import EditProfileSheet from '@/components/EditProfileSheet'
 import UserPostGrid from '@/components/UserPostGrid'
+import OfficialBadge from '@/components/OfficialBadge'
 import { supaBrowser } from '@/lib/supabase/client'
 import type { Profile, UserPostItem } from '@/types'
 
@@ -62,6 +63,7 @@ export default function PerfilView({ profile, posts }: Props) {
               {profile.verified && (
                 <BadgeCheck size={18} className="text-blue shrink-0" />
               )}
+              {profile.is_official && <OfficialBadge size="md" />}
             </div>
             <span className="text-xs font-semibold text-blue bg-blue-soft px-2 py-0.5 rounded-chip mt-1 inline-block">
               {ROLE_LABEL[profile.role] ?? profile.role}
