@@ -3,7 +3,7 @@
 
 /* Reduz atribuição do Leaflet sem removê-la */
 .leaflet-control-attribution {
-  font-size: 9px !important;
+  font-size: 3px !important;
   opacity: 0.5;
   padding: 1px 4px !important;
   background: rgba(255,255,255,0.7) !important;
