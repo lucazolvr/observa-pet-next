@@ -70,12 +70,16 @@ export const petSchema = z.object({
     v => (!v || v === 'Não identificado') ? null : v,
     z.string().max(50).nullable(),
   ),
-  status:       z.string().max(30),
-  overview:     optText(500),
-  personality:  optText(500),
-  neighborhood: optText(100),
-  caption:      optText(1000),
-  location_text:optText(200),
+  status:            z.string().max(30),
+  overview:          optText(500),
+  personality:       optText(500),
+  neighborhood:      optText(100),
+  caption:           optText(1000),
+  location_text:     optText(200),
+  porte:             optText(20),
+  condicao_corporal: z.coerce.number().int().min(1).max(5).nullable().optional(),
+  feridas:           z.preprocess(v => v === 'true' || v === true, z.boolean()).optional(),
+  feridas_desc:      optText(300),
 })
 
 export const pushSubscribeSchema = z.object({
