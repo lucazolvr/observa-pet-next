@@ -36,11 +36,11 @@ export default function InfoTabs({ initialHeat, articles }: Props) {
     <div className="flex flex-col min-h-0">
       {/* Abas */}
       <div className="flex border-b border-border px-5">
-        <TabBtn active={tab === 'mapa'} onClick={() => setTab('mapa')}>
-          Mapa ao vivo
-        </TabBtn>
         <TabBtn active={tab === 'artigos'} onClick={() => setTab('artigos')}>
           Artigos
+        </TabBtn>
+        <TabBtn active={tab === 'mapa'} onClick={() => setTab('mapa')}>
+          Mapa ao vivo
         </TabBtn>
       </div>
 

@@ -141,22 +141,26 @@ export default function MapaLeaflet({ heatData, details }: Props) {
         zoomControl={false}
       >
         <TileLayer
-          attribution='© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='© <a href="https://carto.com/attributions">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          subdomains="abcd"
+          maxZoom={19}
         />
 
-        {/* Bairros sem dados — pontos cinzas */}
+        {/* Bairros sem dados — pontos discretos */}
         {withoutData.map(name => (
           <CircleMarker
             key={`ghost-${name}`}
             center={NEIGHBORHOOD_COORDS[name]}
-            radius={7}
-            pathOptions={{ fillColor: '#94a3b8', fillOpacity: 0.25, color: '#94a3b8', weight: 1, opacity: 0.4 }}
+            radius={5}
+            pathOptions={{ fillColor: '#cbd5e1', fillOpacity: 0.5, color: 'white', weight: 1.5, opacity: 0.7 }}
             eventHandlers={{ click: () => handleClick(name) }}
           >
-            <Tooltip direction="top" offset={[0, -4]} opacity={0.92}>
-              <span className="text-xs font-semibold">{name}</span>
-              <span className="text-muted ml-1 text-xs">— sem dados</span>
+            <Tooltip direction="top" offset={[0, -6]} opacity={0.95}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>{name}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8' }}>Sem avistamentos</div>
+              </div>
             </Tooltip>
           </CircleMarker>
         ))}
@@ -171,17 +175,19 @@ export default function MapaLeaflet({ heatData, details }: Props) {
               radius={heatRadius(count)}
               pathOptions={{
                 fillColor: heatFill(count),
-                fillOpacity: isSelected ? 0.95 : 0.78,
-                color: isSelected ? '#1e3a8a' : 'white',
-                weight: isSelected ? 3 : 1.5,
+                fillOpacity: isSelected ? 1 : 0.88,
+                color: 'white',
+                weight: isSelected ? 3 : 2,
                 opacity: 1,
               }}
               eventHandlers={{ click: () => handleClick(neighborhood) }}
             >
-              <Tooltip direction="top" offset={[0, -heatRadius(count)]} opacity={0.95}>
-                <div style={{ textAlign: 'center' }}>
+              <Tooltip direction="top" offset={[0, -(heatRadius(count) + 4)]} opacity={0.97}>
+                <div style={{ textAlign: 'center', minWidth: 90 }}>
                   <div style={{ fontWeight: 700, fontSize: 12 }}>{neighborhood}</div>
-                  <div style={{ fontSize: 11, color: '#64748b' }}>{count} avistamento{count !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: 11, color: '#64748b' }}>
+                    {count} avistamento{count !== 1 ? 's' : ''} · 72h
+                  </div>
                 </div>
               </Tooltip>
             </CircleMarker>
