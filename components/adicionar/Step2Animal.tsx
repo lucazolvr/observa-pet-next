@@ -7,7 +7,6 @@ const ESPECIES = [
 ] as const
 
 const SEXOS = ['Macho', 'Fêmea', 'Não identificado']
-const PORTES = ['Pequeno', 'Médio', 'Grande']
 const STATUSES = [
   { value: 'avistado',   label: 'Avistado',    bg: '#fff1ee', fg: '#ff6a55' },
   { value: 'urgente',    label: 'Urgente',      bg: '#fff1ee', fg: '#ff6a55' },
@@ -21,6 +20,8 @@ type Props = { state: FormState; dispatch: React.Dispatch<FormAction> }
 function Label({ children }: { children: React.ReactNode }) {
   return <p className="text-sm font-bold text-ink mb-2">{children}</p>
 }
+
+const inputClass = "w-full rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
 
 function FieldInput({ label, field, placeholder, state, dispatch }: {
   label: string
@@ -37,7 +38,7 @@ function FieldInput({ label, field, placeholder, state, dispatch }: {
         value={state[field] as string}
         onChange={e => dispatch({ type: 'SET_FIELD', field, value: e.target.value })}
         placeholder={placeholder}
-        className="w-full rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
+        className={inputClass}
       />
     </div>
   )
@@ -97,25 +98,6 @@ export default function Step2Animal({ state, dispatch }: Props) {
         </div>
       </div>
 
-      {/* Porte */}
-      <div>
-        <Label>Porte</Label>
-        <div className="flex gap-2">
-          {PORTES.map(p => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => dispatch({ type: 'SET_FIELD', field: 'porte', value: p })}
-              className={`flex-1 py-2 rounded-chip text-sm font-semibold transition-colors ${
-                state.porte === p ? 'bg-blue text-white' : 'bg-blue-soft text-blue'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Status */}
       <div>
         <Label>Status *</Label>
@@ -137,6 +119,20 @@ export default function Step2Animal({ state, dispatch }: Props) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Descrição */}
+      <div>
+        <Label>Descrição (opcional)</Label>
+        <textarea
+          value={state.overview}
+          onChange={e => dispatch({ type: 'SET_FIELD', field: 'overview', value: e.target.value })}
+          placeholder="Descreva a situação do animal, condições de saúde, comportamento…"
+          rows={4}
+          maxLength={500}
+          className={`${inputClass} resize-none`}
+        />
+        <p className="text-[11px] text-muted text-right mt-1">{state.overview.length}/500</p>
       </div>
     </div>
   )
