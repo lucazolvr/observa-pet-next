@@ -6,14 +6,8 @@ const ESPECIES = [
   { value: 'outro',    icon: '🐾', label: 'Outro' },
 ] as const
 
-const SEXOS = ['Macho', 'Fêmea', 'Não identificado']
-const STATUSES = [
-  { value: 'avistado',   label: 'Avistado',    bg: '#fff1ee', fg: '#ff6a55' },
-  { value: 'urgente',    label: 'Urgente',      bg: '#fff1ee', fg: '#ff6a55' },
-  { value: 'adocao',     label: 'Para adoção',  bg: '#e8f0ff', fg: '#2a6af0' },
-  { value: 'tratamento', label: 'Tratamento',   bg: '#fff6e6', fg: '#d98a00' },
-  { value: 'resgatado',  label: 'Resgatado',    bg: '#e6f6ee', fg: '#1faa67' },
-] as const
+const SEXOS  = ['Macho', 'Fêmea', 'Não identificado']
+const PORTES = ['Pequeno', 'Médio', 'Grande']
 
 type Props = { state: FormState; dispatch: React.Dispatch<FormAction> }
 
@@ -98,41 +92,23 @@ export default function Step2Animal({ state, dispatch }: Props) {
         </div>
       </div>
 
-      {/* Status */}
+      {/* Porte */}
       <div>
-        <Label>Status *</Label>
-        {state.errors.status && <p className="text-coral text-xs mb-1">{state.errors.status}</p>}
-        <div className="flex flex-wrap gap-2">
-          {STATUSES.map(s => (
+        <Label>Porte</Label>
+        <div className="flex gap-2">
+          {PORTES.map(p => (
             <button
-              key={s.value}
+              key={p}
               type="button"
-              onClick={() => dispatch({ type: 'SET_FIELD', field: 'status', value: s.value })}
-              className="px-3 py-1.5 rounded-chip text-[12px] font-semibold transition-all"
-              style={{
-                background: state.status === s.value ? s.fg : s.bg,
-                color: state.status === s.value ? '#fff' : s.fg,
-                outline: state.status === s.value ? `2px solid ${s.fg}` : 'none',
-              }}
+              onClick={() => dispatch({ type: 'SET_FIELD', field: 'porte', value: p })}
+              className={`flex-1 py-2 rounded-chip text-sm font-semibold transition-colors ${
+                state.porte === p ? 'bg-blue text-white' : 'bg-blue-soft text-blue'
+              }`}
             >
-              {s.label}
+              {p}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Descrição */}
-      <div>
-        <Label>Descrição (opcional)</Label>
-        <textarea
-          value={state.overview}
-          onChange={e => dispatch({ type: 'SET_FIELD', field: 'overview', value: e.target.value })}
-          placeholder="Descreva a situação do animal, condições de saúde, comportamento…"
-          rows={4}
-          maxLength={500}
-          className={`${inputClass} resize-none`}
-        />
-        <p className="text-[11px] text-muted text-right mt-1">{state.overview.length}/500</p>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Loader2, Navigation, X, Search } from 'lucide-react'
+import { Loader2, Navigation, X, Search } from 'lucide-react'
 import { BAIRROS_SAO_LUIS } from '@/lib/bairros'
 import type { FormState, FormAction } from '@/app/(app)/adicionar/page'
 
@@ -12,7 +12,6 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 const inputClass = "w-full rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
-const textareaClass = `${inputClass} resize-none`
 
 // ─── Combobox de bairros ───────────────────────────────────────────────────────
 
@@ -20,10 +19,10 @@ function NeighborhoodCombobox({ value, onChange }: {
   value: string
   onChange: (v: string) => void
 }) {
-  const [query, setQuery]   = useState(value)
-  const [open, setOpen]     = useState(false)
-  const containerRef        = useRef<HTMLDivElement>(null)
-  const inputRef            = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState(value)
+  const [open, setOpen]   = useState(false)
+  const containerRef      = useRef<HTMLDivElement>(null)
+  const inputRef          = useRef<HTMLInputElement>(null)
 
   const filtered = query.length === 0
     ? BAIRROS_SAO_LUIS
@@ -31,16 +30,13 @@ function NeighborhoodCombobox({ value, onChange }: {
         b.toLowerCase().includes(query.toLowerCase())
       )
 
-  useEffect(() => {
-    setQuery(value)
-  }, [value])
+  useEffect(() => { setQuery(value) }, [value])
 
   useEffect(() => {
     if (!open) return
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
-        // if typed text doesn't match any bairro exactly, keep as free text
         if (!BAIRROS_SAO_LUIS.some(b => b.toLowerCase() === query.toLowerCase())) {
           onChange(query)
         }
@@ -76,11 +72,8 @@ function NeighborhoodCombobox({ value, onChange }: {
           className="w-full rounded-[14px] border border-border bg-bg pl-9 pr-9 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
         />
         {query && (
-          <button
-            type="button"
-            onClick={clear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-body"
-          >
+          <button type="button" onClick={clear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-body">
             <X size={14} />
           </button>
         )}
@@ -94,9 +87,7 @@ function NeighborhoodCombobox({ value, onChange }: {
                 type="button"
                 onMouseDown={e => { e.preventDefault(); select(b) }}
                 className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                  value === b
-                    ? 'bg-blue text-white font-semibold'
-                    : 'text-body hover:bg-blue-soft'
+                  value === b ? 'bg-blue text-white font-semibold' : 'text-body hover:bg-blue-soft'
                 }`}
               >
                 {b}
@@ -159,9 +150,7 @@ export default function Step4Localizacao({ state, dispatch }: Props) {
         onClick={getGPS}
         disabled={geoLoading}
         className={`flex items-center gap-3 w-full rounded-[14px] border-2 px-4 py-3 transition-all ${
-          hasGPS
-            ? 'border-green bg-green/5 text-green'
-            : 'border-dashed border-border text-muted'
+          hasGPS ? 'border-green bg-green/5 text-green' : 'border-dashed border-border text-muted'
         }`}
       >
         {geoLoading
@@ -193,20 +182,6 @@ export default function Step4Localizacao({ state, dispatch }: Props) {
           placeholder="Ex: Rua das Flores, próx. ao mercado"
           className={inputClass}
         />
-      </div>
-
-      {/* Situação observada */}
-      <div>
-        <Label>Situação observada</Label>
-        <textarea
-          value={state.caption}
-          onChange={e => set('caption', e.target.value)}
-          placeholder="Descreva o que você viu…"
-          rows={4}
-          maxLength={500}
-          className={textareaClass}
-        />
-        <p className="text-[11px] text-muted text-right mt-1">{state.caption.length}/500</p>
       </div>
     </div>
   )

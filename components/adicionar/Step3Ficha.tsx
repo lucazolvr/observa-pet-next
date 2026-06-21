@@ -45,9 +45,7 @@ export default function Step3Ficha({ state, dispatch }: Props) {
               type="button"
               onClick={() => dispatch({ type: 'SET_FIELD', field: 'condicao_corporal', value: n })}
               className={`flex-1 py-2.5 rounded-chip text-sm font-bold transition-colors ${
-                state.condicao_corporal === n
-                  ? 'bg-blue text-white'
-                  : 'bg-blue-soft text-blue'
+                state.condicao_corporal === n ? 'bg-blue text-white' : 'bg-blue-soft text-blue'
               }`}
             >
               {n}
@@ -55,7 +53,7 @@ export default function Step3Ficha({ state, dispatch }: Props) {
           ))}
         </div>
         {state.condicao_corporal && (
-          <p className="text-xs text-muted text-center animate-op-pop">
+          <p className="text-xs text-muted text-center">
             {state.condicao_corporal} — {CONDICAO_LABELS[state.condicao_corporal]}
           </p>
         )}
@@ -71,9 +69,7 @@ export default function Step3Ficha({ state, dispatch }: Props) {
               type="button"
               onClick={() => dispatch({ type: 'SET_FIELD', field: 'feridas', value: v === 'Sim' })}
               className={`px-5 py-2 rounded-chip text-sm font-semibold transition-colors ${
-                state.feridas === (v === 'Sim')
-                  ? 'bg-blue text-white'
-                  : 'bg-blue-soft text-blue'
+                state.feridas === (v === 'Sim') ? 'bg-blue text-white' : 'bg-blue-soft text-blue'
               }`}
             >
               {v}
@@ -86,7 +82,7 @@ export default function Step3Ficha({ state, dispatch }: Props) {
             onChange={e => dispatch({ type: 'SET_FIELD', field: 'feridas_desc', value: e.target.value })}
             placeholder="Descreva as feridas…"
             rows={3}
-            className="w-full resize-none rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors animate-slide-up"
+            className="w-full resize-none rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
           />
         )}
       </div>
@@ -101,9 +97,7 @@ export default function Step3Ficha({ state, dispatch }: Props) {
               type="button"
               onClick={() => toggleComportamento(c)}
               className={`px-3 py-1.5 rounded-chip text-sm font-semibold transition-colors ${
-                state.comportamento.includes(c)
-                  ? 'bg-blue text-white'
-                  : 'bg-blue-soft text-blue'
+                state.comportamento.includes(c) ? 'bg-blue text-white' : 'bg-blue-soft text-blue'
               }`}
             >
               {c}
@@ -112,18 +106,18 @@ export default function Step3Ficha({ state, dispatch }: Props) {
         </div>
       </div>
 
-      {/* Sobre */}
+      {/* Descrição — substitui "Sobre o animal" + "Situação observada" */}
       <div>
-        <Label>Sobre o animal</Label>
+        <Label>Descrição</Label>
         <textarea
-          value={state.overview}
-          onChange={e => dispatch({ type: 'SET_FIELD', field: 'overview', value: e.target.value })}
-          placeholder="Descreva a situação do animal…"
+          value={state.descricao}
+          onChange={e => dispatch({ type: 'SET_FIELD', field: 'descricao', value: e.target.value })}
+          placeholder="Descreva a situação e o estado do animal…"
           rows={4}
           maxLength={500}
           className="w-full resize-none rounded-[14px] border border-border bg-bg px-3 py-2.5 text-sm text-body placeholder:text-muted focus:outline-none focus:border-blue transition-colors"
         />
-        <p className="text-[11px] text-muted text-right mt-1">{state.overview.length}/500</p>
+        <p className="text-[11px] text-muted text-right mt-1">{state.descricao.length}/500</p>
       </div>
     </div>
   )

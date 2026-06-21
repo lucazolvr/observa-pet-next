@@ -7,29 +7,36 @@ import { createPet } from '@/actions/createPet'
 import ProgressBar from '@/components/adicionar/ProgressBar'
 import Step1Aviso from '@/components/adicionar/Step1Aviso'
 import Step2Animal from '@/components/adicionar/Step2Animal'
+import Step3Ficha from '@/components/adicionar/Step3Ficha'
 import Step4Localizacao from '@/components/adicionar/Step4Localizacao'
 
 export type FormState = {
-  step: 1 | 2 | 3
+  step: 1 | 2 | 3 | 4
   errors: Record<string, string>
 
-  // Etapa 1
+  // Etapa 1 — Aviso
   tipo: string
   photos: File[]
 
-  // Etapa 2
+  // Etapa 2 — Animal (status removido: derivado do tipo)
   species: string
   name: string
   breed: string
   age_text: string
   gender: string
-  status: string
-  overview: string
+  porte: string
 
-  // Etapa 3
+  // Etapa 3 — Ficha clínica
+  condicao_corporal: 1 | 2 | 3 | 4 | 5 | null
+  feridas: boolean
+  feridas_desc: string
+  comportamento: string[]
+  // descricao substitui overview + caption (dois campos redundantes)
+  descricao: string
+
+  // Etapa 4 — Localização
   neighborhood: string
   location_text: string
-  caption: string
   lat: number | null
   lng: number | null
 }
@@ -46,17 +53,24 @@ const initial: FormState = {
   step: 1,
   errors: {},
   tipo: '', photos: [],
-  species: '', name: '', breed: '', age_text: '', gender: '', status: '', overview: '',
-  neighborhood: '', location_text: '', caption: '', lat: null, lng: null,
+  species: '', name: '', breed: '', age_text: '', gender: '', porte: '',
+  condicao_corporal: null, feridas: false, feridas_desc: '', comportamento: [], descricao: '',
+  neighborhood: '', location_text: '', lat: null, lng: null,
+}
+
+// Deriva o status do pet automaticamente a partir do tipo de aviso
+const TIPO_TO_STATUS: Record<string, string> = {
+  avistado:   'avistado',
+  resgate:    'urgente',
+  adocao:     'adocao',
+  perdido:    'avistado',
+  tratamento: 'tratamento',
 }
 
 function validate(state: FormState): Record<string, string> {
   const e: Record<string, string> = {}
   if (state.step === 1 && !state.tipo) e.tipo = 'Selecione o tipo de aviso'
-  if (state.step === 2) {
-    if (!state.species) e.species = 'Selecione a espécie'
-    if (!state.status)  e.status  = 'Selecione o status'
-  }
+  if (state.step === 2 && !state.species) e.species = 'Selecione a espécie'
   return e
 }
 
@@ -71,7 +85,7 @@ function reducer(state: FormState, action: FormAction): FormState {
     case 'NEXT': {
       const errors = validate(state)
       if (Object.keys(errors).length > 0) return { ...state, errors }
-      return { ...state, step: Math.min(3, state.step + 1) as FormState['step'], errors: {} }
+      return { ...state, step: Math.min(4, state.step + 1) as FormState['step'], errors: {} }
     }
     case 'PREV':
       return { ...state, step: Math.max(1, state.step - 1) as FormState['step'], errors: {} }
@@ -82,16 +96,28 @@ function reducer(state: FormState, action: FormAction): FormState {
   }
 }
 
-const STEP_TITLES = ['Aviso', 'Animal', 'Localização']
+function buildTraits(state: FormState): string[] {
+  const traits: string[] = [...state.comportamento]
+  if (state.porte) traits.push(`Porte ${state.porte.toLowerCase()}`)
+  if (state.condicao_corporal) {
+    const labels: Record<number, string> = { 1: 'Muito magro', 2: 'Magro', 3: 'Ideal', 4: 'Sobrepeso', 5: 'Obeso' }
+    traits.push(`Condição corporal: ${labels[state.condicao_corporal]}`)
+  }
+  if (state.feridas && state.feridas_desc) traits.push(`Feridas: ${state.feridas_desc}`)
+  else if (state.feridas) traits.push('Feridas visíveis')
+  return traits
+}
+
+const STEP_TITLES = ['Aviso', 'Animal', 'Ficha clínica', 'Localização']
 
 export default function AdicionarPage() {
   const router = useRouter()
   const [state, dispatch] = useReducer(reducer, initial)
   const [isPending, startTransition] = useTransition()
 
-  const steps = [Step1Aviso, Step2Animal, Step4Localizacao]
+  const steps = [Step1Aviso, Step2Animal, Step3Ficha, Step4Localizacao]
   const StepComponent = steps[state.step - 1]
-  const isLast = state.step === 3
+  const isLast = state.step === 4
 
   async function handleSubmit() {
     const fd = new FormData()
@@ -101,15 +127,15 @@ export default function AdicionarPage() {
     fd.set('breed',         state.breed)
     fd.set('age_text',      state.age_text)
     fd.set('gender',        state.gender)
-    fd.set('status',        state.status)
-    fd.set('overview',      state.overview)
-    fd.set('personality',   '')
+    fd.set('status',        TIPO_TO_STATUS[state.tipo] ?? 'avistado')
+    fd.set('overview',      state.descricao)
+    fd.set('personality',   state.comportamento.join(', '))
     fd.set('neighborhood',  state.neighborhood)
     fd.set('location_text', state.location_text)
     if (state.lat != null) fd.set('lat', String(state.lat))
     if (state.lng != null) fd.set('lng', String(state.lng))
-    fd.set('caption',       state.caption)
-    fd.set('traits',        '[]')
+    fd.set('caption',       state.descricao)
+    fd.set('traits',        JSON.stringify(buildTraits(state)))
     state.photos.forEach(f => fd.append('photos', f))
 
     startTransition(async () => {
@@ -136,7 +162,7 @@ export default function AdicionarPage() {
         </button>
         <div>
           <p className="text-[11px] font-semibold text-muted uppercase tracking-wider">
-            Etapa {state.step} de 3
+            Etapa {state.step} de 4
           </p>
           <h1 className="text-[20px] font-extrabold text-ink leading-tight">
             {STEP_TITLES[state.step - 1]}
@@ -144,7 +170,7 @@ export default function AdicionarPage() {
         </div>
       </div>
 
-      <ProgressBar step={state.step} total={3} />
+      <ProgressBar step={state.step} total={4} />
 
       {/* Conteúdo da etapa */}
       <div className="flex-1 overflow-y-auto px-5 pt-4 pb-32">
