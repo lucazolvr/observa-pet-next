@@ -135,7 +135,10 @@ export default function AdicionarPage() {
     state.photos.forEach(f => fd.append('photos', f))
 
     startTransition(async () => {
-      await createPet(fd)
+      const result = await createPet(fd)
+      if (result?.error) {
+        dispatch({ type: 'SET_ERRORS', payload: { submit: result.error } })
+      }
     })
   }
 
@@ -173,6 +176,9 @@ export default function AdicionarPage() {
       {/* Controles fixos */}
       <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
         <div className="w-full max-w-[430px] px-5 py-3 bg-card border-t border-border pb-safe">
+          {state.errors.submit && (
+            <p className="text-coral text-xs text-center mb-2">{state.errors.submit}</p>
+          )}
           {isLast ? (
             <button
               onClick={handleSubmit}

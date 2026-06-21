@@ -8,15 +8,20 @@ import { petSchema } from '@/lib/schemas'
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5 MB
 const MAX_PHOTOS = 6
 
-export async function createPet(formData: FormData): Promise<never> {
+export type CreatePetResult = { error: string } | null
+
+export async function createPet(formData: FormData): Promise<CreatePetResult> {
   const supabase = await supaServer()
   const user = await requireAuth(supabase).catch(() => null)
   if (!user) redirect('/login')
 
-  // 10 posts por hora por usuário
-  await rateLimit(supabase, `create_pet:${user.id}`, 10, 3600)
+  try {
+    await rateLimit(supabase, `create_pet:${user.id}`, 10, 3600)
+  } catch {
+    return { error: 'Muitas requisições. Tente novamente em breve.' }
+  }
 
-  const parsed = petSchema.parse({
+  const result = petSchema.safeParse({
     species:       formData.get('species') ?? '',
     type:          formData.get('tipo')    ?? '',
     name:          formData.get('name')    ?? '',
@@ -30,6 +35,11 @@ export async function createPet(formData: FormData): Promise<never> {
     caption:       formData.get('caption')  ?? '',
     location_text: formData.get('location_text') ?? '',
   })
+  if (!result.success) {
+    const first = result.error.issues[0]
+    return { error: `Campo inválido: ${first.path.join('.')} — ${first.message}` }
+  }
+  const parsed = result.data
 
   const traits = safeJsonArray(formData.get('traits') as string | null)
     .filter(t => typeof t === 'string' && t.length <= 50)
@@ -58,7 +68,7 @@ export async function createPet(formData: FormData): Promise<never> {
     .select('id')
     .single()
 
-  if (petError || !pet) throw new Error('Erro ao criar animal')
+  if (petError || !pet) return { error: `Erro ao salvar animal: ${petError?.message ?? 'desconhecido'}` }
 
   const { data: post, error: postError } = await supabase
     .from('posts')
@@ -73,7 +83,7 @@ export async function createPet(formData: FormData): Promise<never> {
     .select('id')
     .single()
 
-  if (postError || !post) throw new Error('Erro ao criar post')
+  if (postError || !post) return { error: `Erro ao criar post: ${postError?.message ?? 'desconhecido'}` }
 
   const photos = (formData.getAll('photos') as File[]).slice(0, MAX_PHOTOS)
   for (let i = 0; i < photos.length; i++) {
@@ -91,4 +101,5 @@ export async function createPet(formData: FormData): Promise<never> {
   }
 
   redirect(`/pet/${pet.id}`)
+  return null
 }
