@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
-  globalSetup: './tests/e2e/globalSetup.ts',
+  globalSetup:    './tests/e2e/globalSetup.ts',
+  globalTeardown: './tests/e2e/globalTeardown.ts',
   testDir: './tests/e2e',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
